@@ -1,0 +1,662 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api": {
+      "get": {
+        "operationId": "AppController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/api/looks": {
+      "get": {
+        "operationId": "LooksController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of all looks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LooksListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all looks with metadata",
+        "tags": [
+          "looks"
+        ]
+      }
+    },
+    "/api/looks/{id}": {
+      "get": {
+        "operationId": "LooksController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Look ID (0-7)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Look details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Look not found"
+          }
+        },
+        "summary": "Get a single look by ID",
+        "tags": [
+          "looks"
+        ]
+      }
+    },
+    "/api/products": {
+      "get": {
+        "operationId": "ProductsController_findAll",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "tops",
+              "type": "string",
+              "enum": [
+                "tops",
+                "bottoms",
+                "full",
+                "shoes",
+                "acc"
+              ]
+            }
+          },
+          {
+            "name": "lookId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by look ID",
+            "schema": {
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Filtered list of products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductsListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List products with optional filters and pagination",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "operationId": "ProductsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Product ID (e.g. prod-0-top-0)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        },
+        "summary": "Get a product by ID",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/orders": {
+      "post": {
+        "operationId": "OrdersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order placed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation failed on request body"
+          }
+        },
+        "summary": "Create a new order",
+        "tags": [
+          "orders"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "VELL Fashion API",
+    "description": "Backend API for VELL Fashion Shop. Connect to swagger at /api-docs",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {
+      "PieceDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Ribbed crop tank"
+          },
+          "color": {
+            "type": "string",
+            "example": "Charcoal"
+          },
+          "priceVND": {
+            "type": "number",
+            "example": 950000
+          }
+        },
+        "required": [
+          "name",
+          "color",
+          "priceVND"
+        ]
+      },
+      "LookPiecesDto": {
+        "type": "object",
+        "properties": {
+          "tops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceDto"
+            }
+          },
+          "bottoms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceDto"
+            }
+          },
+          "full": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceDto"
+            }
+          },
+          "shoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceDto"
+            }
+          },
+          "acc": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceDto"
+            }
+          }
+        },
+        "required": [
+          "tops",
+          "bottoms",
+          "full",
+          "shoes",
+          "acc"
+        ]
+      },
+      "LookDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 0
+          },
+          "name": {
+            "type": "string",
+            "example": "Denim Maxi"
+          },
+          "category": {
+            "type": "string",
+            "example": "everyday",
+            "enum": [
+              "everyday",
+              "athletic",
+              "sleep",
+              "formal",
+              "party",
+              "street"
+            ]
+          },
+          "priceFromVND": {
+            "type": "number",
+            "example": 350000,
+            "description": "Starting price in VND (cheapest piece)"
+          },
+          "pieces": {
+            "$ref": "#/components/schemas/LookPiecesDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "priceFromVND",
+          "pieces"
+        ]
+      },
+      "LooksListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LookDto"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "example": {
+              "total": 8
+            }
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "ProductVariantDto": {
+        "type": "object",
+        "properties": {
+          "size": {
+            "type": "string",
+            "example": "M",
+            "enum": [
+              "XS",
+              "S",
+              "M",
+              "L",
+              "XL"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "example": "Charcoal"
+          },
+          "stock": {
+            "type": "number",
+            "example": 10
+          },
+          "sku": {
+            "type": "string",
+            "example": "TOP-01-M-CHR"
+          }
+        },
+        "required": [
+          "size",
+          "color",
+          "stock",
+          "sku"
+        ]
+      },
+      "SizeGuideDto": {
+        "type": "object",
+        "properties": {
+          "XS": {
+            "type": "string",
+            "example": "≤155cm"
+          },
+          "S": {
+            "type": "string",
+            "example": "156-162cm"
+          },
+          "M": {
+            "type": "string",
+            "example": "163-168cm"
+          },
+          "L": {
+            "type": "string",
+            "example": "169-174cm"
+          },
+          "XL": {
+            "type": "string",
+            "example": "≥175cm"
+          }
+        },
+        "required": [
+          "XS",
+          "S",
+          "M",
+          "L",
+          "XL"
+        ]
+      },
+      "ProductDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "prod-top-00-0"
+          },
+          "lookId": {
+            "type": "number",
+            "example": 0
+          },
+          "category": {
+            "type": "string",
+            "example": "tops",
+            "enum": [
+              "tops",
+              "bottoms",
+              "full",
+              "shoes",
+              "acc"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "example": "Ribbed crop tank"
+          },
+          "priceVND": {
+            "type": "number",
+            "example": 950000
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductVariantDto"
+            }
+          },
+          "sizeGuide": {
+            "$ref": "#/components/schemas/SizeGuideDto"
+          }
+        },
+        "required": [
+          "id",
+          "lookId",
+          "category",
+          "name",
+          "priceVND",
+          "variants",
+          "sizeGuide"
+        ]
+      },
+      "ProductsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductDto"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "example": {
+              "total": 20,
+              "page": 1,
+              "limit": 20
+            }
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ]
+      },
+      "OrderItemDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "Product ID",
+            "example": "prod-0-top-0"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity",
+            "example": 1,
+            "minimum": 1
+          },
+          "size": {
+            "type": "string",
+            "description": "Selected size",
+            "example": "M",
+            "enum": [
+              "XS",
+              "S",
+              "M",
+              "L",
+              "XL"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Selected color",
+            "example": "Charcoal"
+          }
+        },
+        "required": [
+          "productId",
+          "quantity",
+          "size",
+          "color"
+        ]
+      },
+      "ShippingAddressDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Recipient full name",
+            "example": "Nguyễn Văn A"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Recipient phone number",
+            "example": "0901234567"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address",
+            "example": "123 Đường Lê Lợi, Phường Bến Nghé"
+          },
+          "city": {
+            "type": "string",
+            "description": "District / City",
+            "example": "Quận 1"
+          },
+          "province": {
+            "type": "string",
+            "description": "Province / City",
+            "example": "Hồ Chí Minh"
+          }
+        },
+        "required": [
+          "name",
+          "phone",
+          "address",
+          "city",
+          "province"
+        ]
+      },
+      "CreateOrderDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "description": "List of order items",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItemDto"
+            }
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Payment method",
+            "example": "cod",
+            "enum": [
+              "cod",
+              "qr_bank",
+              "vnpay",
+              "momo",
+              "zalopay"
+            ]
+          },
+          "shippingAddress": {
+            "description": "Shipping address details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ShippingAddressDto"
+              }
+            ]
+          },
+          "couponCode": {
+            "type": "string",
+            "description": "Coupon code",
+            "example": "VELL10"
+          }
+        },
+        "required": [
+          "items",
+          "paymentMethod",
+          "shippingAddress"
+        ]
+      },
+      "OrderResponseDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "description": "Unique order identifier",
+            "example": "vell-ord-1700000000-a1b2"
+          },
+          "status": {
+            "type": "string",
+            "description": "Order status",
+            "example": "pending"
+          },
+          "subtotalVND": {
+            "type": "number",
+            "description": "Subtotal before discount and shipping (VND)",
+            "example": 950000
+          },
+          "discountVND": {
+            "type": "number",
+            "description": "Discount applied (VND)",
+            "example": 95000
+          },
+          "estimatedShippingVND": {
+            "type": "number",
+            "description": "Estimated shipping fee (VND)",
+            "example": 30000
+          },
+          "totalVND": {
+            "type": "number",
+            "description": "Final total payable (VND)",
+            "example": 885000
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Chosen payment method",
+            "example": "cod"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "ISO 8601 creation timestamp",
+            "example": "2026-11-13T03:52:11.000Z"
+          }
+        },
+        "required": [
+          "orderId",
+          "status",
+          "subtotalVND",
+          "discountVND",
+          "estimatedShippingVND",
+          "totalVND",
+          "paymentMethod",
+          "createdAt"
+        ]
+      }
+    }
+  }
+}
