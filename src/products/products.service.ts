@@ -1,6 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type {} from 'multer';
+import { randomUUID } from 'node:crypto';
+import { extname, join } from 'node:path';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { ProductDto } from './dto/product-response.dto.js';
 import { QueryProductDto } from './dto/query-product.dto.js';
+import {
+  CATEGORY_Z_INDEX_MAP,
+  CreateProductLayerDto,
+  LayerCategory,
+  ProductLayerResponseDto,
+} from './dto/create-product-layer.dto.js';
+import {
+  OutfitResponseDto,
+  PieceResponseDto,
+  PIECE_Z_INDEX_MAP,
+  UploadOutfitDto,
+  UploadPieceDto,
+} from './dto/upload-piece-outfit.dto.js';
 
 type SizeKey = 'XS' | 'S' | 'M' | 'L' | 'XL';
 
@@ -84,6 +101,129 @@ const PRODUCTS: ProductDto[] = [
   product('prod-7-sho-0', 7, 'shoes', 'Platform sneakers', 3750000, 'Black'),
 ];
 
+// In-memory store for dynamic mix & match layer products
+const LAYER_PRODUCTS: ProductLayerResponseDto[] = [];
+
+// Seed Pieces for Mix & Match (Scenario A)
+const PIECES_STORE: PieceResponseDto[] = [
+  {
+    id: 'piece-top-denim',
+    name: 'Ribbed Crop Tank',
+    type: 'top',
+    thumbnailUrl: '/uploads/thumb-top-denim.png',
+    layerUrl: '/uploads/layer-top-denim.png',
+    zIndex: 30,
+    priceVND: 950000,
+    color: 'Charcoal',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-top-cloud',
+    name: 'Half-zip Sweatshirt',
+    type: 'top',
+    thumbnailUrl: '/uploads/thumb-top-cloud.png',
+    layerUrl: '/uploads/layer-top-cloud.png',
+    zIndex: 30,
+    priceVND: 1850000,
+    color: 'Oat',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-bot-maxi',
+    name: 'Washed Denim Maxi Skirt',
+    type: 'bottom',
+    thumbnailUrl: '/uploads/thumb-bot-maxi.png',
+    layerUrl: '/uploads/layer-bot-maxi.png',
+    zIndex: 20,
+    priceVND: 2400000,
+    color: 'Light wash',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-bot-sweat',
+    name: 'Wide Sweatpants',
+    type: 'bottom',
+    thumbnailUrl: '/uploads/thumb-bot-sweat.png',
+    layerUrl: '/uploads/layer-bot-sweat.png',
+    zIndex: 20,
+    priceVND: 1700000,
+    color: 'Oat',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-dress-sage',
+    name: 'Satin Slip Midi Dress',
+    type: 'dress',
+    thumbnailUrl: '/uploads/thumb-dress-sage.png',
+    layerUrl: '/uploads/layer-dress-sage.png',
+    zIndex: 25,
+    priceVND: 4500000,
+    color: 'Sage',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-shoes-boots',
+    name: 'Knee-high Leather Boots',
+    type: 'shoes',
+    thumbnailUrl: '/uploads/thumb-shoes-boots.png',
+    layerUrl: '/uploads/layer-shoes-boots.png',
+    zIndex: 50,
+    priceVND: 5250000,
+    color: 'Black',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-shoes-sneakers',
+    name: 'Chunky Sneakers',
+    type: 'shoes',
+    thumbnailUrl: '/uploads/thumb-shoes-sneakers.png',
+    layerUrl: '/uploads/layer-shoes-sneakers.png',
+    zIndex: 50,
+    priceVND: 3000000,
+    color: 'White',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'piece-acc-belt',
+    name: 'Leather Belt',
+    type: 'acc',
+    thumbnailUrl: '/uploads/thumb-acc-belt.png',
+    layerUrl: '/uploads/layer-acc-belt.png',
+    zIndex: 60,
+    priceVND: 1050000,
+    color: 'Black',
+    createdAt: new Date().toISOString(),
+  },
+];
+
+// Seed Outfits for Mix & Match (Scenario B)
+const OUTFITS_STORE: OutfitResponseDto[] = [
+  {
+    id: 'outfit-denim-maxi',
+    name: 'Denim Maxi Signature Set',
+    thumbnailUrl: '/uploads/thumb-outfit-denim.png',
+    pieceIds: ['piece-top-denim', 'piece-bot-maxi', 'piece-shoes-boots', 'piece-acc-belt'],
+    discountPercent: 15,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'outfit-cloud-lounge',
+    name: 'Cloud Lounge Set',
+    thumbnailUrl: '/uploads/thumb-outfit-cloud.png',
+    pieceIds: ['piece-top-cloud', 'piece-bot-sweat', 'piece-shoes-sneakers'],
+    discountPercent: 15,
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'outfit-sage-evening',
+    name: 'Sage Evening Gala',
+    thumbnailUrl: '/uploads/thumb-outfit-sage.png',
+    pieceIds: ['piece-dress-sage', 'piece-shoes-boots'],
+    discountPercent: 15,
+    createdAt: new Date().toISOString(),
+  },
+];
+
 @Injectable()
 export class ProductsService {
   findAll(query: QueryProductDto): { data: ProductDto[]; meta: { total: number; page: number; limit: number } } {
@@ -106,8 +246,158 @@ export class ProductsService {
   }
 
   findOne(id: string): ProductDto {
-    const product = PRODUCTS.find((p) => p.id === id);
-    if (!product) throw new NotFoundException(`Product "${id}" not found`);
-    return product;
+    const p = PRODUCTS.find((item) => item.id === id);
+    if (!p) throw new NotFoundException(`Product "${id}" not found`);
+    return p;
+  }
+
+  findAllLayers(): ProductLayerResponseDto[] {
+    return [...LAYER_PRODUCTS];
+  }
+
+  createProductLayer(
+    dto: CreateProductLayerDto,
+    imageFile?: Express.Multer.File,
+    thumbnailFile?: Express.Multer.File,
+  ): ProductLayerResponseDto {
+    const uploadsDir = join(process.cwd(), 'public', 'uploads');
+    mkdirSync(uploadsDir, { recursive: true });
+
+    let imageUrl = '';
+    if (imageFile && imageFile.buffer) {
+      const ext = extname(imageFile.originalname) || '.png';
+      const filename = `layer-${randomUUID()}${ext}`;
+      writeFileSync(join(uploadsDir, filename), imageFile.buffer);
+      imageUrl = `/uploads/${filename}`;
+    } else {
+      imageUrl = `/uploads/default-${dto.category.toLowerCase()}.png`;
+    }
+
+    let thumbnailUrl = '';
+    if (thumbnailFile && thumbnailFile.buffer) {
+      const ext = extname(thumbnailFile.originalname) || '.png';
+      const filename = `thumb-${randomUUID()}${ext}`;
+      writeFileSync(join(uploadsDir, filename), thumbnailFile.buffer);
+      thumbnailUrl = `/uploads/${filename}`;
+    } else {
+      thumbnailUrl = imageUrl;
+    }
+
+    const layerZIndex =
+      dto.layerZIndex !== undefined && !Number.isNaN(Number(dto.layerZIndex))
+        ? Number(dto.layerZIndex)
+        : CATEGORY_Z_INDEX_MAP[dto.category] ?? 30;
+
+    let excludes = dto.excludes ?? [];
+    if (excludes.length === 0) {
+      if (dto.category === LayerCategory.DRESS) {
+        excludes = [LayerCategory.TOP, LayerCategory.BOTTOM];
+      } else if (dto.category === LayerCategory.TOP || dto.category === LayerCategory.BOTTOM) {
+        excludes = [LayerCategory.DRESS];
+      }
+    }
+
+    const newLayer: ProductLayerResponseDto = {
+      id: `layer-${randomUUID().substring(0, 8)}`,
+      name: dto.name,
+      category: dto.category,
+      layerZIndex,
+      priceVND: Number(dto.priceVND),
+      color: dto.color,
+      excludes,
+      imageUrl,
+      thumbnailUrl,
+      createdAt: new Date().toISOString(),
+    };
+
+    LAYER_PRODUCTS.push(newLayer);
+    return newLayer;
+  }
+
+  // --- Kịch bản A: Upload một món đồ lẻ (Piece) ---
+  findAllPieces(): PieceResponseDto[] {
+    return [...PIECES_STORE];
+  }
+
+  uploadPiece(
+    dto: UploadPieceDto,
+    thumbnailFile?: Express.Multer.File,
+    layerFile?: Express.Multer.File,
+  ): PieceResponseDto {
+    const uploadsDir = join(process.cwd(), 'public', 'uploads');
+    mkdirSync(uploadsDir, { recursive: true });
+
+    let thumbnailUrl = '';
+    if (thumbnailFile && thumbnailFile.buffer) {
+      const ext = extname(thumbnailFile.originalname) || '.png';
+      const filename = `thumb-${randomUUID()}${ext}`;
+      writeFileSync(join(uploadsDir, filename), thumbnailFile.buffer);
+      thumbnailUrl = `/uploads/${filename}`;
+    } else {
+      thumbnailUrl = `/uploads/default-piece-thumb.png`;
+    }
+
+    let layerUrl = '';
+    if (layerFile && layerFile.buffer) {
+      const ext = extname(layerFile.originalname) || '.png';
+      const filename = `layer-${randomUUID()}${ext}`;
+      writeFileSync(join(uploadsDir, filename), layerFile.buffer);
+      layerUrl = `/uploads/${filename}`;
+    } else {
+      layerUrl = `/uploads/default-piece-layer.png`;
+    }
+
+    // Auto Z-Index logic: top: 30, bottom: 20, dress: 25, shoes: 50, acc: 60
+    const zIndex = PIECE_Z_INDEX_MAP[dto.type] ?? 30;
+
+    const piece: PieceResponseDto = {
+      id: `piece-${randomUUID().substring(0, 8)}`,
+      name: dto.name,
+      type: dto.type,
+      thumbnailUrl,
+      layerUrl,
+      zIndex,
+      priceVND: Number(dto.priceVND),
+      color: dto.color,
+      createdAt: new Date().toISOString(),
+    };
+
+    PIECES_STORE.unshift(piece);
+    return piece;
+  }
+
+  // --- Kịch bản B: Upload một Outfit (Set đồ phối sẵn) ---
+  findAllOutfits(): OutfitResponseDto[] {
+    return [...OUTFITS_STORE];
+  }
+
+  uploadOutfit(
+    dto: UploadOutfitDto,
+    thumbnailFile?: Express.Multer.File,
+  ): OutfitResponseDto {
+    const uploadsDir = join(process.cwd(), 'public', 'uploads');
+    mkdirSync(uploadsDir, { recursive: true });
+
+    let thumbnailUrl = '';
+    if (thumbnailFile && thumbnailFile.buffer) {
+      const ext = extname(thumbnailFile.originalname) || '.png';
+      const filename = `outfit-thumb-${randomUUID()}${ext}`;
+      writeFileSync(join(uploadsDir, filename), thumbnailFile.buffer);
+      thumbnailUrl = `/uploads/${filename}`;
+    } else {
+      thumbnailUrl = `/uploads/default-outfit-thumb.png`;
+    }
+
+    const outfit: OutfitResponseDto = {
+      id: `outfit-${randomUUID().substring(0, 8)}`,
+      name: dto.name,
+      thumbnailUrl,
+      pieceIds: dto.pieceIds || [],
+      discountPercent: Number(dto.discountPercent ?? 15),
+      createdAt: new Date().toISOString(),
+    };
+
+    OUTFITS_STORE.unshift(outfit);
+    return outfit;
   }
 }

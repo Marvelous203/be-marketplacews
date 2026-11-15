@@ -139,6 +139,81 @@
         ]
       }
     },
+    "/api/products/layers": {
+      "get": {
+        "operationId": "ProductsController_findAllLayers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of layer products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductLayerResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all dynamic mix-and-match layer products",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/pieces": {
+      "get": {
+        "operationId": "ProductsController_findAllPieces",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of individual clothing pieces with Z-index and layer URLs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PieceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all mix-and-match clothing pieces (seed + user uploaded)",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/outfits": {
+      "get": {
+        "operationId": "ProductsController_findAllOutfits",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of outfit presets referencing piece IDs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OutfitResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all curated outfit sets / presets",
+        "tags": [
+          "products"
+        ]
+      }
+    },
     "/api/products/{id}": {
       "get": {
         "operationId": "ProductsController_findOne",
@@ -169,6 +244,238 @@
           }
         },
         "summary": "Get a product by ID",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/upload": {
+      "post": {
+        "operationId": "ProductsController_uploadProduct",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Product layer image assets & metadata",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "category",
+                  "priceVND"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Ribbed Crop Tank"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "TOP",
+                      "BOTTOM",
+                      "DRESS",
+                      "OUTERWEAR",
+                      "SHOES",
+                      "ACCESSORY"
+                    ],
+                    "example": "TOP"
+                  },
+                  "layerZIndex": {
+                    "type": "number",
+                    "example": 30
+                  },
+                  "priceVND": {
+                    "type": "number",
+                    "example": 950000
+                  },
+                  "color": {
+                    "type": "string",
+                    "example": "Charcoal"
+                  },
+                  "excludes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "TOP",
+                        "BOTTOM",
+                        "DRESS",
+                        "OUTERWEAR",
+                        "SHOES",
+                        "ACCESSORY"
+                      ]
+                    },
+                    "example": [
+                      "DRESS"
+                    ]
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Transparent PNG/WebP canvas image (e.g. 1360x2048)"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Menu icon thumbnail (e.g. 360x360)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product layer created and image stored successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductLayerResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload a mix-and-match product layer with transparent image and thumbnail",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/upload-piece": {
+      "post": {
+        "operationId": "ProductsController_uploadPiece",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Clothing piece files and metadata",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type",
+                  "priceVND"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Ribbed Crop Tank"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "top",
+                      "bottom",
+                      "dress",
+                      "shoes",
+                      "acc"
+                    ],
+                    "example": "top"
+                  },
+                  "priceVND": {
+                    "type": "number",
+                    "example": 950000
+                  },
+                  "color": {
+                    "type": "string",
+                    "example": "Charcoal"
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "300x300px square thumbnail image"
+                  },
+                  "layer": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "1360x2048px transparent PNG/WebP canvas image"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Individual piece uploaded and registered with automatic Z-Index",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PieceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload an individual clothing piece (thumbnail 300x300 + transparent layer 1360x2048)",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/api/products/upload-outfit": {
+      "post": {
+        "operationId": "ProductsController_uploadOutfit",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Outfit cover thumbnail and list of piece IDs",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "pieceIds"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Denim Chic Look"
+                  },
+                  "pieceIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": [
+                      "piece-top-denim",
+                      "piece-bot-maxi",
+                      "piece-shoes-boots"
+                    ]
+                  },
+                  "discountPercent": {
+                    "type": "number",
+                    "example": 15,
+                    "default": 15
+                  },
+                  "thumbnail": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Set cover thumbnail image"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Outfit preset created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutfitResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Upload an outfit preset referencing existing piece IDs (no layer images needed)",
         "tags": [
           "products"
         ]
@@ -482,6 +789,185 @@
         "required": [
           "data",
           "meta"
+        ]
+      },
+      "ProductLayerResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "layer-prod-8a2b3c4d"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ribbed Crop Tank"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "TOP",
+              "BOTTOM",
+              "DRESS",
+              "OUTERWEAR",
+              "SHOES",
+              "ACCESSORY"
+            ],
+            "example": "TOP"
+          },
+          "layerZIndex": {
+            "type": "number",
+            "example": 30
+          },
+          "priceVND": {
+            "type": "number",
+            "example": 950000
+          },
+          "color": {
+            "type": "string",
+            "example": "Charcoal"
+          },
+          "excludes": {
+            "type": "array",
+            "example": [
+              "DRESS"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "TOP",
+                "BOTTOM",
+                "DRESS",
+                "OUTERWEAR",
+                "SHOES",
+                "ACCESSORY"
+              ]
+            }
+          },
+          "imageUrl": {
+            "type": "string",
+            "example": "/uploads/images/layer-prod-1.png"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "example": "/uploads/thumbnails/layer-prod-1-thumb.png"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-11-13T04:40:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "layerZIndex",
+          "priceVND",
+          "excludes",
+          "imageUrl",
+          "thumbnailUrl",
+          "createdAt"
+        ]
+      },
+      "PieceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "piece-8f1c997e"
+          },
+          "name": {
+            "type": "string",
+            "example": "Ribbed Crop Tank"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "top",
+              "bottom",
+              "dress",
+              "shoes",
+              "acc"
+            ],
+            "example": "top"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "example": "/uploads/thumb-3357fc7c.png"
+          },
+          "layerUrl": {
+            "type": "string",
+            "example": "/uploads/layer-3357fc7c.png"
+          },
+          "zIndex": {
+            "type": "number",
+            "example": 30
+          },
+          "priceVND": {
+            "type": "number",
+            "example": 950000
+          },
+          "color": {
+            "type": "string",
+            "example": "Charcoal"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-11-13T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "thumbnailUrl",
+          "layerUrl",
+          "zIndex",
+          "priceVND",
+          "createdAt"
+        ]
+      },
+      "OutfitResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "outfit-5a3d1b7e"
+          },
+          "name": {
+            "type": "string",
+            "example": "Denim Chic Look"
+          },
+          "thumbnailUrl": {
+            "type": "string",
+            "example": "/uploads/outfit-thumb-5a3d1b7e.png"
+          },
+          "pieceIds": {
+            "example": [
+              "piece-0-top",
+              "piece-0-bot",
+              "piece-0-sho"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "discountPercent": {
+            "type": "number",
+            "example": 15
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-11-13T12:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "thumbnailUrl",
+          "pieceIds",
+          "discountPercent",
+          "createdAt"
         ]
       },
       "OrderItemDto": {
