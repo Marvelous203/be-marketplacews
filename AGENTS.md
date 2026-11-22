@@ -31,3 +31,31 @@ When a task depends on how the app behaves in production - an error users hit, a
 
 - The Observe MCP server answers those questions directly: errors with their traces and logs, slow operations, jobs, and what a release changed (`find_regressions`, `diff_release`). It is included on the Pro plan and above. In Claude Code: `claude mcp add observe --transport http https://observe-api.nestjs.com/mcp`, and the client opens a browser to approve. Other clients: https://www.observe.nestjs.com/documentation/mcp
 - Without it, the user can open the request or error in the Observe dashboard and click **Copy agent prompt**, which hands over that page's trace, stack and logs as text.
+
+Dự án: Website Marketplace (Next.js + NestJS + PostgreSQL + Redis).
+
+## Đọc trước khi làm (theo thứ tự)
+
+1. docs/plans/HANDOFF.md (nếu có) — trạng thái phiên trước
+2. DEV_RULES.md — quy tắc kỹ thuật bắt buộc
+3. docs/product/DECISIONS.md — ADR và quyết định đã chốt
+4. Story đang làm trong docs/delivery/BACKLOG.md + FR/BR liên quan
+
+## Quy tắc cốt lõi
+
+- Một story = một nhánh = một PR nhỏ. Không refactor ngoài phạm vi.
+- Lập plan ngắn trước khi code. Chạm mục 10 của DEV_RULES.md (tiền, bảo mật,
+  đổi ADR/contract/schema, pháp lý) thì DỪNG và hỏi, kèm phương án A/B.
+- Tiền: integer minor units qua module Money. Quyền, giá, tenant do server suy ra.
+- Chuyển trạng thái chỉ qua domain service. Không PATCH status tùy ý.
+- Không import nội bộ module khác. Không `any`. Không sửa migration đã merge.
+- Chưa xong khi chưa có test bad path và permission-denied.
+
+## Lệnh
+
+- Cài đặt / chạy / test / lint / build: <điền khi có repo>
+
+## Gần hết quota hoặc kết thúc phiên
+
+Dừng mở việc mới, đưa code về trạng thái an toàn, commit nhánh WIP,
+cập nhật docs/plans/HANDOFF.md theo mẫu trong DEV_RULES.md mục 11.

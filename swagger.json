@@ -15,6 +15,566 @@
         ]
       }
     },
+    "/api/v1/public/categories": {
+      "get": {
+        "operationId": "PublicCatalogController_getCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lấy danh sách các danh mục giải pháp website",
+        "tags": [
+          "Public Catalog"
+        ]
+      }
+    },
+    "/api/v1/public/tags": {
+      "get": {
+        "operationId": "PublicCatalogController_getTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TagDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lấy danh sách thẻ phân loại / bộ lọc",
+        "tags": [
+          "Public Catalog"
+        ]
+      }
+    },
+    "/api/v1/public/features": {
+      "get": {
+        "operationId": "PublicCatalogController_getFeatures",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureDefinitionDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lấy từ điển tính năng có thể lọc",
+        "tags": [
+          "Public Catalog"
+        ]
+      }
+    },
+    "/api/v1/public/listings": {
+      "get": {
+        "operationId": "PublicCatalogController_getListings",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Category slug",
+            "schema": {
+              "example": "food-beverage",
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Tag slug",
+            "schema": {
+              "example": "nextjs",
+              "type": "string"
+            }
+          },
+          {
+            "name": "fulfillment",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SOURCE_CODE",
+                "MANAGED_SERVICE",
+                "SAAS",
+                "CUSTOM_PROJECT"
+              ]
+            }
+          },
+          {
+            "name": "pricing",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FIXED",
+                "STARTING_AT",
+                "QUOTE",
+                "SUBSCRIPTION"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Tìm kiếm theo từ khóa",
+            "schema": {
+              "example": "nhà hàng",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 24,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Tìm kiếm, lọc danh mục giải pháp website công khai",
+        "tags": [
+          "Public Catalog"
+        ]
+      }
+    },
+    "/api/v1/public/listings/{slug}": {
+      "get": {
+        "operationId": "PublicCatalogController_getListingBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Xem chi tiết giải pháp, demo, offers và bảng giá",
+        "tags": [
+          "Public Catalog"
+        ]
+      }
+    },
+    "/api/v1/admin/categories": {
+      "get": {
+        "operationId": "AdminCatalogController_getAllCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Admin: Danh sách tất cả danh mục (kể cả inactive)",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      },
+      "post": {
+        "operationId": "AdminCatalogController_createCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Tạo mới danh mục ngành nghề",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/admin/categories/{id}": {
+      "patch": {
+        "operationId": "AdminCatalogController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Cập nhật danh mục",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/admin/tags": {
+      "post": {
+        "operationId": "AdminCatalogController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Tạo mới thẻ phân loại",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/admin/listings": {
+      "post": {
+        "operationId": "AdminCatalogController_createListing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Tạo bản nháp giải pháp (Listing Draft)",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/admin/listings/{id}/offers": {
+      "post": {
+        "operationId": "AdminCatalogController_addOffer",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOfferDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Thêm gói thương mại (Offer) cho giải pháp",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/admin/listings/{id}/publish": {
+      "post": {
+        "operationId": "AdminCatalogController_publishListing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Phê duyệt và xuất bản giải pháp ra catalog công khai",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/admin/listings/{id}/suspend": {
+      "post": {
+        "operationId": "AdminCatalogController_suspendListing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspendListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetailDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Admin: Tạm ngưng xuất bản giải pháp kèm lý do",
+        "tags": [
+          "Admin Catalog Management"
+        ]
+      }
+    },
+    "/api/v1/public/community/categories": {
+      "get": {
+        "operationId": "PublicCommunityController_getCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Lấy danh sách các chuyên mục diễn đàn cộng đồng",
+        "tags": [
+          "Public Community Forum"
+        ]
+      }
+    },
+    "/api/v1/public/community/threads": {
+      "get": {
+        "operationId": "PublicCommunityController_getThreads",
+        "parameters": [
+          {
+            "name": "category",
+            "required": false,
+            "in": "query",
+            "description": "Chuyên mục slug",
+            "schema": {
+              "example": "wanted",
+              "type": "string"
+            }
+          },
+          {
+            "name": "threadType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DISCUSSION",
+                "QUESTION",
+                "SHOWCASE",
+                "WANTED",
+                "ANNOUNCEMENT"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Từ khóa tìm kiếm",
+            "schema": {
+              "example": "Next.js",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Lấy danh sách bài viết / Bảng Cần giải pháp (Wanted)",
+        "tags": [
+          "Public Community Forum"
+        ]
+      }
+    },
+    "/api/v1/public/community/threads/{slug}": {
+      "get": {
+        "operationId": "PublicCommunityController_getThreadBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Xem chi tiết bài viết, câu trả lời và thông tin yêu cầu",
+        "tags": [
+          "Public Community Forum"
+        ]
+      }
+    },
     "/api/looks": {
       "get": {
         "operationId": "LooksController_findAll",
@@ -518,8 +1078,8 @@
     }
   },
   "info": {
-    "title": "VELL Fashion API",
-    "description": "Backend API for VELL Fashion Shop. Connect to swagger at /api-docs",
+    "title": "Website Solution Marketplace API",
+    "description": "Backend API for Website Marketplace & Multi-tenant platform",
     "version": "1.0",
     "contact": {}
   },
@@ -527,6 +1087,710 @@
   "servers": [],
   "components": {
     "schemas": {
+      "CategoryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "object"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "description",
+          "sortOrder",
+          "isActive"
+        ]
+      },
+      "TagDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "example": "Next.js"
+          },
+          "slug": {
+            "type": "string",
+            "example": "nextjs"
+          },
+          "tagGroup": {
+            "type": "string",
+            "example": "TECH"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "tagGroup"
+        ]
+      },
+      "FeatureDefinitionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string",
+            "example": "booking_engine"
+          },
+          "label": {
+            "type": "string",
+            "example": "Đặt bàn / Đặt lịch trực tuyến"
+          },
+          "dataType": {
+            "type": "string",
+            "enum": [
+              "BOOLEAN",
+              "TEXT",
+              "NUMBER"
+            ]
+          },
+          "groupName": {
+            "type": "string",
+            "example": "Tính năng cốt lõi"
+          },
+          "isFilterable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "label",
+          "dataType",
+          "groupName",
+          "isFilterable"
+        ]
+      },
+      "ListingMediaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"
+          },
+          "altText": {
+            "type": "string",
+            "example": "Ảnh xem trước trang chủ"
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ],
+            "example": "IMAGE"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "altText",
+          "mediaType",
+          "isPrimary"
+        ]
+      },
+      "PriceSummaryDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Từ"
+          },
+          "amountMinor": {
+            "type": "number",
+            "example": 3500000
+          },
+          "formattedPrice": {
+            "type": "string",
+            "example": "3.500.000 ₫"
+          },
+          "currency": {
+            "type": "string",
+            "example": "VND"
+          }
+        },
+        "required": [
+          "label",
+          "amountMinor",
+          "formattedPrice",
+          "currency"
+        ]
+      },
+      "ListingFeatureValueDto": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "booking_engine"
+          },
+          "label": {
+            "type": "string",
+            "example": "Đặt bàn trực tuyến"
+          },
+          "value": {
+            "type": "object",
+            "example": true
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value"
+        ]
+      },
+      "DeliveryScopeDto": {
+        "type": "object",
+        "properties": {
+          "included": {
+            "example": [
+              "Giao diện responsive",
+              "Bàn giao source code Next.js"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded": {
+            "example": [
+              "Hosting cao cấp",
+              "Viết bài chuẩn SEO"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deliverables": {
+            "example": [
+              "Toàn bộ source code repository",
+              "File hướng dẫn README"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "included",
+          "excluded",
+          "deliverables"
+        ]
+      },
+      "OfferPriceResponseDto": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string",
+            "example": "VND"
+          },
+          "amountMinor": {
+            "type": "number",
+            "example": 3500000,
+            "description": "Integer minor units (VND: đồng)"
+          },
+          "formattedPrice": {
+            "type": "string",
+            "example": "3.500.000 ₫"
+          },
+          "billingInterval": {
+            "type": "string",
+            "enum": [
+              "ONE_TIME",
+              "WEEK",
+              "MONTH",
+              "YEAR"
+            ],
+            "example": "ONE_TIME"
+          }
+        },
+        "required": [
+          "currency",
+          "amountMinor",
+          "formattedPrice",
+          "billingInterval"
+        ]
+      },
+      "OfferResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "example": "SOURCE_LICENSE"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bản quyền Mã nguồn"
+          },
+          "description": {
+            "type": "string"
+          },
+          "fulfillmentType": {
+            "type": "string",
+            "enum": [
+              "SOURCE_CODE",
+              "MANAGED_SERVICE",
+              "SAAS",
+              "CUSTOM_PROJECT"
+            ]
+          },
+          "pricingModel": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "STARTING_AT",
+              "QUOTE",
+              "SUBSCRIPTION"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "INACTIVE",
+              "ARCHIVED"
+            ]
+          },
+          "requiresConsultation": {
+            "type": "boolean"
+          },
+          "licenseSummary": {
+            "type": "string"
+          },
+          "deliveryScope": {
+            "$ref": "#/components/schemas/DeliveryScopeDto"
+          },
+          "billingInterval": {
+            "type": "string",
+            "enum": [
+              "ONE_TIME",
+              "WEEK",
+              "MONTH",
+              "YEAR"
+            ]
+          },
+          "price": {
+            "$ref": "#/components/schemas/OfferPriceResponseDto"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "fulfillmentType",
+          "pricingModel",
+          "status",
+          "requiresConsultation",
+          "deliveryScope"
+        ]
+      },
+      "ListingDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "example": "restaurant-pro"
+          },
+          "title": {
+            "type": "string",
+            "example": "Restaurant Pro — Mẫu Website Nhà hàng & Đặt bàn"
+          },
+          "shortDescription": {
+            "type": "string",
+            "example": "Giải pháp website tối ưu cho nhà hàng, quán ăn, tích hợp đặt bàn và menu điện tử."
+          },
+          "listingKind": {
+            "type": "string",
+            "enum": [
+              "WEBSITE_TEMPLATE",
+              "BUSINESS_WEBSITE",
+              "LANDING_PAGE",
+              "ECOMMERCE",
+              "WEB_APPLICATION",
+              "SAAS_PRODUCT",
+              "CUSTOM_SERVICE",
+              "OTHER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "SUBMITTED",
+              "IN_REVIEW",
+              "CHANGES_REQUESTED",
+              "REJECTED",
+              "PUBLISHED",
+              "SUSPENDED",
+              "ARCHIVED"
+            ]
+          },
+          "category": {
+            "$ref": "#/components/schemas/CategoryDto"
+          },
+          "seller": {
+            "type": "object",
+            "example": {
+              "id": "plat-1",
+              "name": "Platform Official",
+              "slug": "platform",
+              "sellerType": "PLATFORM"
+            }
+          },
+          "coverImage": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ListingMediaDto"
+              }
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagDto"
+            }
+          },
+          "availableFulfillmentTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "SOURCE_CODE",
+                "MANAGED_SERVICE",
+                "SAAS",
+                "CUSTOM_PROJECT"
+              ]
+            }
+          },
+          "priceSummary": {
+            "$ref": "#/components/schemas/PriceSummaryDto"
+          },
+          "featured": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "example": "<p>Chi tiết giải pháp website nhà hàng cao cấp...</p>"
+          },
+          "demoUrl": {
+            "type": "string",
+            "example": "https://demo.restaurant-pro.example.com"
+          },
+          "previewMode": {
+            "type": "string",
+            "enum": [
+              "EXTERNAL_LINK",
+              "APPROVED_EMBED",
+              "SCREENSHOTS"
+            ]
+          },
+          "gallery": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingMediaDto"
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListingFeatureValueDto"
+            }
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfferResponseDto"
+            }
+          },
+          "publishedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "shortDescription",
+          "listingKind",
+          "status",
+          "category",
+          "seller",
+          "coverImage",
+          "tags",
+          "availableFulfillmentTypes",
+          "featured",
+          "description",
+          "previewMode",
+          "gallery",
+          "features",
+          "offers"
+        ]
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Nhà hàng & Ẩm thực"
+          },
+          "slug": {
+            "type": "string",
+            "example": "food-beverage"
+          },
+          "description": {
+            "type": "string",
+            "example": "Mẫu website cho quán cafe, nhà hàng tiệc cưới"
+          },
+          "iconKey": {
+            "type": "string",
+            "example": "utensils"
+          },
+          "parentId": {
+            "type": "object",
+            "example": null
+          },
+          "sortOrder": {
+            "type": "number",
+            "default": 0
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "description"
+        ]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "iconKey": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateTagDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Next.js"
+          },
+          "slug": {
+            "type": "string",
+            "example": "nextjs"
+          },
+          "tagGroup": {
+            "type": "string",
+            "example": "TECH"
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "tagGroup"
+        ]
+      },
+      "CreateOfferDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "SOURCE_LICENSE"
+          },
+          "name": {
+            "type": "string",
+            "example": "Bản quyền Mã nguồn (Source Code)"
+          },
+          "description": {
+            "type": "string",
+            "example": "Khách hàng nhận full source code Next.js và hướng dẫn tự triển khai."
+          },
+          "fulfillmentType": {
+            "type": "string",
+            "enum": [
+              "SOURCE_CODE",
+              "MANAGED_SERVICE",
+              "SAAS",
+              "CUSTOM_PROJECT"
+            ]
+          },
+          "pricingModel": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "STARTING_AT",
+              "QUOTE",
+              "SUBSCRIPTION"
+            ]
+          },
+          "amountMinor": {
+            "type": "number",
+            "example": 3500000,
+            "description": "Số tiền integer minor unit"
+          },
+          "currency": {
+            "type": "string",
+            "default": "VND"
+          },
+          "billingInterval": {
+            "type": "string",
+            "enum": [
+              "ONE_TIME",
+              "WEEK",
+              "MONTH",
+              "YEAR"
+            ]
+          },
+          "requiresConsultation": {
+            "type": "boolean",
+            "default": false
+          },
+          "licenseSummary": {
+            "type": "string",
+            "example": "Single Domain Standard Commercial License"
+          },
+          "deliveryScope": {
+            "$ref": "#/components/schemas/DeliveryScopeDto"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "description",
+          "fulfillmentType",
+          "pricingModel"
+        ]
+      },
+      "CreateListingDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Restaurant Pro — Mẫu Website Nhà hàng"
+          },
+          "slug": {
+            "type": "string",
+            "example": "restaurant-pro"
+          },
+          "shortDescription": {
+            "type": "string",
+            "example": "Giải pháp website tối ưu cho nhà hàng..."
+          },
+          "description": {
+            "type": "string",
+            "example": "<p>Mô tả chi tiết giải pháp...</p>"
+          },
+          "categorySlug": {
+            "type": "string",
+            "example": "food-beverage"
+          },
+          "listingKind": {
+            "type": "string",
+            "enum": [
+              "WEBSITE_TEMPLATE",
+              "BUSINESS_WEBSITE",
+              "LANDING_PAGE",
+              "ECOMMERCE",
+              "WEB_APPLICATION",
+              "SAAS_PRODUCT",
+              "CUSTOM_SERVICE",
+              "OTHER"
+            ],
+            "default": "BUSINESS_WEBSITE"
+          },
+          "demoUrl": {
+            "type": "string",
+            "example": "https://demo.example.com"
+          },
+          "offers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateOfferDto"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "slug",
+          "shortDescription",
+          "description",
+          "categorySlug",
+          "listingKind"
+        ]
+      },
+      "SuspendListingDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "example": "Phát hiện khiếu nại bản quyền hình ảnh."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
       "PieceDto": {
         "type": "object",
         "properties": {

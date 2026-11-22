@@ -9,8 +9,8 @@ async function generate() {
   app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
-    .setTitle('VELL Fashion API')
-    .setDescription('Backend API for VELL Fashion Shop. Connect to swagger at /api-docs')
+    .setTitle('Website Solution Marketplace API')
+    .setDescription('Backend API for Website Marketplace & Multi-tenant platform')
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);
