@@ -9,9 +9,15 @@ async function generate() {
   app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
-    .setTitle('Website Solution Marketplace API')
-    .setDescription('Backend API for Website Marketplace & Multi-tenant platform')
-    .setVersion('1.0')
+    .setTitle('Website Solution Marketplace & VELL Platform API')
+    .setDescription('Backend API for Website Marketplace & Multi-tenant platform with 5 Roles & Tenant Sub-roles')
+    .setVersion('1.1')
+    .addBearerAuth()
+    .addTag('Authentication & Identity', 'Đăng nhập, xác thực JWT và thông tin tài khoản')
+    .addTag('Admin Users & Tenant Roles Management', 'Quản lý người dùng, phân quyền Admin Owner và Sub-roles')
+    .addTag('Admin Catalog Management', 'Quản trị danh mục, tags, giải pháp và gói chào giá')
+    .addTag('Admin Quote Requests', 'Quản trị yêu cầu dự án tùy biến')
+    .addTag('Admin Quotations', 'Quản trị hồ sơ báo giá')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   fs.writeFileSync('./swagger.json', JSON.stringify(document, null, 2));

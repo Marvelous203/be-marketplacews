@@ -15,6 +15,267 @@
         ]
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Hỗ trợ 5 roles: super_admin, admin_owner, tenant, dev_freelance, guest. Trả về access token JWT và thông tin tài khoản.",
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đăng nhập thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu yêu cầu không hợp lệ"
+          },
+          "401": {
+            "description": "Sai email hoặc mật khẩu"
+          }
+        },
+        "summary": "Đăng nhập người dùng bằng Email/Password hoặc Đăng nhập nhanh theo Role Mock",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Thông tin hồ sơ người dùng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token không hợp lệ hoặc đã hết hạn"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Lấy thông tin người dùng hiện tại từ JWT Bearer Token",
+        "tags": [
+          "Authentication & Identity"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminUsersController_getAllUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Danh sách người dùng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserProfileDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Chưa đăng nhập"
+          },
+          "403": {
+            "description": "Không đủ quyền truy cập (Yêu cầu super_admin hoặc admin_owner)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Danh sách tất cả người dùng trong hệ thống kèm vai trò và thông tin Tenant",
+        "tags": [
+          "Admin Users & Tenant Roles Management"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "operationId": "AdminUsersController_getUserById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID người dùng",
+            "schema": {
+              "example": "usr-tenant",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết người dùng",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Không tìm thấy người dùng"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Chi tiết một người dùng cụ thể",
+        "tags": [
+          "Admin Users & Tenant Roles Management"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/promote-owner": {
+      "post": {
+        "description": "Gán tenantId, websiteName, websiteDomain và các quyền quản trị cơ bản (editor, order_manager, cashier) cho người dùng.",
+        "operationId": "AdminUsersController_promoteOwner",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID người dùng cần thăng cấp",
+            "schema": {
+              "example": "usr-tenant",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromoteOwnerDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thăng cấp thành công thành admin_owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ hoặc tài khoản không thể thăng cấp"
+          },
+          "403": {
+            "description": "Chỉ Super Admin mới có quyền thực hiện hành động này"
+          },
+          "404": {
+            "description": "Không tìm thấy người dùng"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Super Admin: Thăng cấp tài khoản Tenant thành Admin Owner của một Website/Tenant đã bàn giao",
+        "tags": [
+          "Admin Users & Tenant Roles Management"
+        ]
+      }
+    },
+    "/api/v1/admin/tenants/{tenantId}/sub-roles": {
+      "post": {
+        "operationId": "AdminUsersController_manageSubRoles",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "description": "Mã định danh Tenant",
+            "schema": {
+              "example": "tenant-boutique-001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManageSubRolesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cập nhật sub-roles thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dữ liệu không hợp lệ"
+          },
+          "403": {
+            "description": "Không đủ quyền quản trị tenant"
+          },
+          "404": {
+            "description": "Không tìm thấy người dùng"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Gán hoặc gỡ sub_role cho nhân viên của Website/Tenant (editor, order_manager, cashier, support)",
+        "tags": [
+          "Admin Users & Tenant Roles Management"
+        ]
+      }
+    },
     "/api/v1/public/categories": {
       "get": {
         "operationId": "PublicCatalogController_getCategories",
@@ -222,6 +483,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Danh sách tất cả danh mục (kể cả inactive)",
         "tags": [
           "Admin Catalog Management"
@@ -252,6 +518,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Tạo mới danh mục ngành nghề",
         "tags": [
           "Admin Catalog Management"
@@ -293,6 +564,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Cập nhật danh mục",
         "tags": [
           "Admin Catalog Management"
@@ -325,6 +601,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Tạo mới thẻ phân loại",
         "tags": [
           "Admin Catalog Management"
@@ -357,6 +638,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Tạo bản nháp giải pháp (Listing Draft)",
         "tags": [
           "Admin Catalog Management"
@@ -398,6 +684,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Thêm gói thương mại (Offer) cho giải pháp",
         "tags": [
           "Admin Catalog Management"
@@ -429,6 +720,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Phê duyệt và xuất bản giải pháp ra catalog công khai",
         "tags": [
           "Admin Catalog Management"
@@ -470,6 +766,11 @@
             }
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "summary": "Admin: Tạm ngưng xuất bản giải pháp kèm lý do",
         "tags": [
           "Admin Catalog Management"
@@ -572,6 +873,471 @@
         "summary": "Xem chi tiết bài viết, câu trả lời và thông tin yêu cầu",
         "tags": [
           "Public Community Forum"
+        ]
+      }
+    },
+    "/api/v1/quote-requests": {
+      "post": {
+        "operationId": "PublicRequestsController_createRequest",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Yêu cầu được khởi tạo thành công và trả về mã tra cứu duy nhất"
+          }
+        },
+        "summary": "Khách hàng hoặc khách vãng lai gửi yêu cầu dự án tùy biến (WM-042)",
+        "tags": [
+          "Public Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/quote-requests/{refOrId}": {
+      "get": {
+        "operationId": "PublicRequestsController_getPublicRequest",
+        "parameters": [
+          {
+            "name": "refOrId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dữ liệu tiến độ an toàn (không chứa ghi chú nội bộ)"
+          }
+        },
+        "summary": "Khách hàng tra cứu tiến độ xử lý yêu cầu theo mã tra cứu (WMR-XXXX) hoặc ID",
+        "tags": [
+          "Public Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/quote-requests": {
+      "get": {
+        "operationId": "AdminRequestsController_getRequests",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "WMR-2026",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "NEW",
+                "TRIAGED",
+                "IN_REVIEW",
+                "WAITING_CUSTOMER",
+                "QUOTATION_SENT",
+                "CONVERTED",
+                "CLOSED_WON",
+                "CLOSED_LOST",
+                "SPAM"
+              ]
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "NORMAL",
+                "HIGH",
+                "URGENT"
+              ]
+            }
+          },
+          {
+            "name": "assignedToUserId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "staff-user-id",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách yêu cầu phân trang"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin / Staff: Danh sách yêu cầu dự án (Inbox) kèm bộ lọc và tìm kiếm (WM-043)",
+        "tags": [
+          "Admin Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/quote-requests/{id}": {
+      "get": {
+        "operationId": "AdminRequestsController_getRequestById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Toàn bộ thông tin hồ sơ yêu cầu"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin / Staff: Xem chi tiết yêu cầu, timeline hoạt động và ghi chú nội bộ",
+        "tags": [
+          "Admin Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/quote-requests/{id}/assign": {
+      "post": {
+        "operationId": "AdminRequestsController_assignStaff",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Phân công thành công"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Phân công nhân viên tư vấn / kỹ thuật phụ trách yêu cầu (WM-044)",
+        "tags": [
+          "Admin Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/quote-requests/{id}/status": {
+      "post": {
+        "operationId": "AdminRequestsController_transitionStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chuyển trạng thái thành công"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin / Staff: Chuyển đổi trạng thái hồ sơ kiểm soát qua State Machine (WM-044, BR-18)",
+        "tags": [
+          "Admin Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/quote-requests/{id}/internal-notes": {
+      "post": {
+        "operationId": "AdminRequestsController_addInternalNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddInternalNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ghi chú được lưu thành công"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Staff: Thêm ghi chú trao đổi nội bộ (không hiển thị cho khách hàng) (WM-044)",
+        "tags": [
+          "Admin Quote Requests"
+        ]
+      }
+    },
+    "/api/v1/admin/quotations": {
+      "post": {
+        "operationId": "AdminQuotationsController_createQuotation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateQuotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bản thảo báo giá được tạo thành công"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Khởi tạo bản thảo báo giá mới (WM-050)",
+        "tags": [
+          "Admin Quotations"
+        ]
+      }
+    },
+    "/api/v1/admin/quotations/{id}": {
+      "get": {
+        "operationId": "AdminQuotationsController_getQuotationById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Toàn bộ dữ liệu báo giá"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Xem chi tiết báo giá và lịch sử các phiên bản",
+        "tags": [
+          "Admin Quotations"
+        ]
+      }
+    },
+    "/api/v1/admin/quotations/{id}/send": {
+      "post": {
+        "operationId": "AdminQuotationsController_sendQuotation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Báo giá đã chuyển sang SENT và thông báo cho khách"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Gửi báo giá cho khách hàng và đóng băng phiên bản (WM-051)",
+        "tags": [
+          "Admin Quotations"
+        ]
+      }
+    },
+    "/api/v1/quotations/{id}": {
+      "get": {
+        "operationId": "PublicQuotationsController_getQuotationById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết báo giá phiên bản hiện hành"
+          }
+        },
+        "summary": "Khách hàng: Xem chi tiết báo giá qua đường link an toàn (WM-052)",
+        "tags": [
+          "Public & Customer Quotations"
+        ]
+      }
+    },
+    "/api/v1/quotations/{id}/accept": {
+      "post": {
+        "operationId": "PublicQuotationsController_acceptQuotation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptQuotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chấp thuận thành công, chuyển sang trạng thái ACCEPTED"
+          }
+        },
+        "summary": "Khách hàng: Chấp thuận báo giá và chuyển sang đơn hàng (WM-052)",
+        "tags": [
+          "Public & Customer Quotations"
+        ]
+      }
+    },
+    "/api/v1/quotations/{id}/reject": {
+      "post": {
+        "operationId": "PublicQuotationsController_rejectQuotation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectQuotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Báo giá chuyển sang trạng thái REJECTED"
+          }
+        },
+        "summary": "Khách hàng: Từ chối báo giá (WM-052)",
+        "tags": [
+          "Public & Customer Quotations"
         ]
       }
     },
@@ -1078,15 +1844,233 @@
     }
   },
   "info": {
-    "title": "Website Solution Marketplace API",
-    "description": "Backend API for Website Marketplace & Multi-tenant platform",
-    "version": "1.0",
+    "title": "Website Solution Marketplace & VELL Platform API",
+    "description": "Backend API for Website Marketplace & Multi-tenant platform with 5 Roles & Tenant Sub-roles",
+    "version": "1.1",
     "contact": {}
   },
-  "tags": [],
+  "tags": [
+    {
+      "name": "Authentication & Identity",
+      "description": "Đăng nhập, xác thực JWT và thông tin tài khoản"
+    },
+    {
+      "name": "Admin Users & Tenant Roles Management",
+      "description": "Quản lý người dùng, phân quyền Admin Owner và Sub-roles"
+    },
+    {
+      "name": "Admin Catalog Management",
+      "description": "Quản trị danh mục, tags, giải pháp và gói chào giá"
+    },
+    {
+      "name": "Admin Quote Requests",
+      "description": "Quản trị yêu cầu dự án tùy biến"
+    },
+    {
+      "name": "Admin Quotations",
+      "description": "Quản trị hồ sơ báo giá"
+    }
+  ],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
     "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "Email đăng nhập của người dùng",
+            "example": "superadmin@marketplace.vn"
+          },
+          "password": {
+            "type": "string",
+            "description": "Mật khẩu tài khoản (mặc định cho mock account: password123)",
+            "example": "password123"
+          },
+          "role": {
+            "type": "string",
+            "description": "Đăng nhập nhanh theo Role mock (super_admin, admin_owner, tenant, dev_freelance, guest)",
+            "enum": [
+              "super_admin",
+              "admin_owner",
+              "tenant",
+              "dev_freelance",
+              "guest"
+            ],
+            "example": "super_admin"
+          }
+        }
+      },
+      "UserProfileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "usr-super-admin"
+          },
+          "email": {
+            "type": "string",
+            "example": "superadmin@marketplace.vn"
+          },
+          "name": {
+            "type": "string",
+            "example": "Hệ Thống Super Admin"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "guest",
+              "tenant",
+              "dev_freelance",
+              "admin_owner",
+              "super_admin"
+            ],
+            "example": "super_admin"
+          },
+          "tenantId": {
+            "type": "object",
+            "example": null
+          },
+          "websiteName": {
+            "type": "object",
+            "example": null
+          },
+          "websiteDomain": {
+            "type": "object",
+            "example": null
+          },
+          "subRoles": {
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "subRoles",
+          "isActive"
+        ]
+      },
+      "LoginResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer"
+          },
+          "expiresIn": {
+            "type": "number",
+            "example": 86400
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserProfileDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "tokenType",
+          "expiresIn",
+          "user"
+        ]
+      },
+      "PromoteOwnerDto": {
+        "type": "object",
+        "properties": {
+          "tenantId": {
+            "type": "string",
+            "description": "Mã định danh Tenant của website (ví dụ: tenant-cosmetics-003)",
+            "example": "tenant-cosmetics-003"
+          },
+          "websiteName": {
+            "type": "string",
+            "description": "Tên thương hiệu / website được bàn giao",
+            "example": "Hana Cosmetics Online"
+          },
+          "websiteDomain": {
+            "type": "string",
+            "description": "Tên miền website đã kích hoạt",
+            "example": "hanacosmetics.vn"
+          },
+          "initialSubRoles": {
+            "type": "array",
+            "description": "Các sub-roles ban đầu gán cho admin owner",
+            "example": [
+              "editor",
+              "order_manager",
+              "cashier"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "editor",
+                "order_manager",
+                "cashier",
+                "support"
+              ]
+            }
+          }
+        },
+        "required": [
+          "tenantId",
+          "websiteName",
+          "websiteDomain"
+        ]
+      },
+      "ManageSubRolesDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "ID người dùng thuộc tenant cần phân quyền sub-role",
+            "example": "usr-tenant"
+          },
+          "subRole": {
+            "type": "string",
+            "description": "Sub-role cụ thể cần gán hoặc gỡ",
+            "enum": [
+              "editor",
+              "order_manager",
+              "cashier",
+              "support"
+            ],
+            "example": "editor"
+          },
+          "action": {
+            "type": "string",
+            "description": "Hành động: grant (gán quyền) hoặc revoke (gỡ quyền)",
+            "enum": [
+              "grant",
+              "revoke"
+            ],
+            "example": "grant"
+          }
+        },
+        "required": [
+          "userId",
+          "subRole",
+          "action"
+        ]
+      },
       "CategoryDto": {
         "type": "object",
         "properties": {
@@ -1789,6 +2773,495 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "BudgetDto": {
+        "type": "object",
+        "properties": {
+          "minMinor": {
+            "type": "number",
+            "example": 10000000
+          },
+          "maxMinor": {
+            "type": "number",
+            "example": 30000000
+          },
+          "currency": {
+            "type": "string",
+            "example": "VND",
+            "default": "VND"
+          },
+          "flexibility": {
+            "type": "string",
+            "enum": [
+              "STRICT",
+              "NEGOTIABLE",
+              "NOT_SURE"
+            ],
+            "default": "NEGOTIABLE"
+          }
+        },
+        "required": [
+          "currency"
+        ]
+      },
+      "RequirementsDto": {
+        "type": "object",
+        "properties": {
+          "estimatedPages": {
+            "type": "string",
+            "example": "5_TO_10"
+          },
+          "features": {
+            "example": [
+              "CMS",
+              "CONTACT_FORM",
+              "BOOKING"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "integrations": {
+            "example": [
+              "EMAIL",
+              "ZALO"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "designReferenceUrls": {
+            "example": [
+              "https://example.com/ref"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "technicalConfidence": {
+            "type": "string",
+            "enum": [
+              "KNOW_EXACTLY",
+              "NEED_CONSULTATION",
+              "NO_PREFERENCE"
+            ],
+            "default": "NEED_CONSULTATION"
+          },
+          "rawAnswers": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "features"
+        ]
+      },
+      "ContactDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Nguyễn Văn A"
+          },
+          "email": {
+            "type": "string",
+            "example": "khachhang@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+84912345678"
+          },
+          "company": {
+            "type": "string",
+            "example": "Cửa hàng Gốm Xưa"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ]
+      },
+      "ConsentDto": {
+        "type": "object",
+        "properties": {
+          "privacyPolicyVersion": {
+            "type": "string",
+            "example": "2026-11-01"
+          },
+          "marketingOptIn": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "privacyPolicyVersion"
+        ]
+      },
+      "CreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "relatedListingId": {
+            "type": "string",
+            "example": "a3d0d7ef-2f06-41d7-80f0-e13b157d0321"
+          },
+          "relatedOfferId": {
+            "type": "string",
+            "example": "f8d3c1a2-4b5e-49c7-9a1b-3e5f7a9c1b3d"
+          },
+          "title": {
+            "type": "string",
+            "example": "Website cho chuỗi nhà hàng Phố Cổ"
+          },
+          "industryCategoryId": {
+            "type": "string",
+            "example": "food-beverage"
+          },
+          "solutionType": {
+            "type": "string",
+            "example": "BUSINESS_WEBSITE"
+          },
+          "goal": {
+            "type": "string",
+            "example": "Giới thiệu thực đơn món ăn, đặt bàn trực tuyến và tích hợp mã QR tại bàn."
+          },
+          "budget": {
+            "$ref": "#/components/schemas/BudgetDto"
+          },
+          "targetDate": {
+            "type": "string",
+            "example": "2027-01-15"
+          },
+          "requirements": {
+            "$ref": "#/components/schemas/RequirementsDto"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/ContactDto"
+          },
+          "consent": {
+            "$ref": "#/components/schemas/ConsentDto"
+          }
+        },
+        "required": [
+          "title",
+          "solutionType",
+          "goal",
+          "budget",
+          "requirements",
+          "contact",
+          "consent"
+        ]
+      },
+      "AssignStaffDto": {
+        "type": "object",
+        "properties": {
+          "staffUserId": {
+            "type": "string",
+            "example": "staff-01"
+          },
+          "staffName": {
+            "type": "string",
+            "example": "Trần Tư Vấn Viên"
+          },
+          "actor": {
+            "type": "string",
+            "example": "admin"
+          }
+        },
+        "required": [
+          "staffUserId",
+          "staffName"
+        ]
+      },
+      "TransitionRequestDto": {
+        "type": "object",
+        "properties": {
+          "toStatus": {
+            "type": "string",
+            "enum": [
+              "NEW",
+              "TRIAGED",
+              "IN_REVIEW",
+              "WAITING_CUSTOMER",
+              "QUOTATION_SENT",
+              "CONVERTED",
+              "CLOSED_WON",
+              "CLOSED_LOST",
+              "SPAM"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "example": "Đã hoàn tất phân loại và điều phối kỹ sư khảo sát"
+          },
+          "actor": {
+            "type": "string",
+            "example": "admin-lead"
+          }
+        },
+        "required": [
+          "toStatus",
+          "reason"
+        ]
+      },
+      "AddInternalNoteDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "Khách hàng yêu cầu hỗ trợ thêm cổng thanh toán VNPay và bảo mật 2 lớp."
+          },
+          "authorId": {
+            "type": "string",
+            "example": "staff-user-id"
+          },
+          "authorName": {
+            "type": "string",
+            "example": "Nguyễn Kỹ Sư"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "QuotationScopeDto": {
+        "type": "object",
+        "properties": {
+          "deliverables": {
+            "example": [
+              "Giao diện responsive đa thiết bị",
+              "Hệ thống quản trị thực đơn CMS",
+              "Tích hợp mã QR bàn"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "included": {
+            "example": [
+              "Thiết kế theo nhận diện Phố Nghề",
+              "Hỗ trợ cấu hình tên miền và máy chủ 12 tháng"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excluded": {
+            "example": [
+              "Phí cổng thanh toán bên thứ ba",
+              "Nội dung bài viết tự nhập"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "assumptions": {
+            "example": [
+              "Khách hàng cung cấp hình ảnh món ăn và logo gốc"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "deliverables",
+          "included",
+          "excluded"
+        ]
+      },
+      "PaymentScheduleItemDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Đặt cọc khởi động dự án"
+          },
+          "percent": {
+            "type": "number",
+            "example": 50,
+            "description": "Phần trăm"
+          }
+        },
+        "required": [
+          "label",
+          "percent"
+        ]
+      },
+      "QuotationTermsDto": {
+        "type": "object",
+        "properties": {
+          "paymentSchedule": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentScheduleItemDto"
+            }
+          },
+          "warrantyDays": {
+            "type": "number",
+            "example": 30,
+            "description": "Số ngày bảo hành"
+          },
+          "supportSummary": {
+            "type": "string",
+            "example": "Hỗ trợ kỹ thuật 24/7 trong suốt thời gian bảo hành và vận hành"
+          },
+          "termsVersion": {
+            "type": "string",
+            "example": "QUOTE-TERMS-1.0",
+            "default": "QUOTE-TERMS-1.0"
+          }
+        },
+        "required": [
+          "paymentSchedule",
+          "warrantyDays",
+          "supportSummary"
+        ]
+      },
+      "QuotationLineDto": {
+        "type": "object",
+        "properties": {
+          "lineType": {
+            "type": "string",
+            "enum": [
+              "SERVICE",
+              "LICENSE",
+              "HOSTING",
+              "MAINTENANCE"
+            ],
+            "example": "SERVICE"
+          },
+          "description": {
+            "type": "string",
+            "example": "Phát triển website đặt món & menu QR chuẩn Phố Nghề"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 1,
+            "default": 1
+          },
+          "unit": {
+            "type": "string",
+            "example": "GÓI",
+            "default": "GÓI"
+          },
+          "unitPriceMinor": {
+            "type": "number",
+            "example": 18000000,
+            "description": "Đơn giá dạng integer minor units (VND)"
+          },
+          "discountMinor": {
+            "type": "number",
+            "example": 0,
+            "default": 0
+          },
+          "taxCode": {
+            "type": "string",
+            "example": "STANDARD"
+          }
+        },
+        "required": [
+          "lineType",
+          "description",
+          "quantity",
+          "unit",
+          "unitPriceMinor"
+        ]
+      },
+      "CreateQuotationDto": {
+        "type": "object",
+        "properties": {
+          "quoteRequestId": {
+            "type": "string",
+            "example": "req-001-phoco"
+          },
+          "sellerOrganizationId": {
+            "type": "string",
+            "example": "org-platform-studio"
+          },
+          "sellerName": {
+            "type": "string",
+            "example": "Platform Studio & Nghệ Nhân Web"
+          },
+          "currency": {
+            "type": "string",
+            "example": "VND",
+            "default": "VND"
+          },
+          "validUntil": {
+            "type": "string",
+            "example": "2026-12-15T23:59:59Z"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/QuotationScopeDto"
+          },
+          "terms": {
+            "$ref": "#/components/schemas/QuotationTermsDto"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotationLineDto"
+            }
+          }
+        },
+        "required": [
+          "quoteRequestId",
+          "sellerOrganizationId",
+          "currency",
+          "validUntil",
+          "scope",
+          "terms",
+          "lines"
+        ]
+      },
+      "AcceptQuotationDto": {
+        "type": "object",
+        "properties": {
+          "quotationVersionId": {
+            "type": "string",
+            "example": "qv-001"
+          },
+          "acceptanceName": {
+            "type": "string",
+            "example": "Trần Đình Trọng"
+          },
+          "acceptanceNote": {
+            "type": "string",
+            "example": "Tôi đồng ý với phạm vi công việc và tiến độ thanh toán nêu trên."
+          },
+          "termsVersion": {
+            "type": "string",
+            "example": "QUOTE-TERMS-1.0",
+            "default": "QUOTE-TERMS-1.0"
+          }
+        },
+        "required": [
+          "quotationVersionId",
+          "acceptanceName"
+        ]
+      },
+      "RejectQuotationDto": {
+        "type": "object",
+        "properties": {
+          "quotationVersionId": {
+            "type": "string",
+            "example": "qv-001"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "example": "Ngân sách vượt quá dự kiến ban đầu của chúng tôi."
+          }
+        },
+        "required": [
+          "quotationVersionId",
+          "rejectionReason"
         ]
       },
       "PieceDto": {

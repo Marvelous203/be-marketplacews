@@ -3,9 +3,10 @@ import { CatalogService } from './catalog.service.js';
 import { PublicCatalogController } from './public-catalog.controller.js';
 import { AdminCatalogController } from './admin-catalog.controller.js';
 import { MoneyModule } from '../../common/money/money.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
-  imports: [MoneyModule],
+  imports: [MoneyModule, AuthModule],
   controllers: [PublicCatalogController, AdminCatalogController],
   providers: [CatalogService],
   exports: [CatalogService],

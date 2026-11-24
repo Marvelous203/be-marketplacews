@@ -5,8 +5,9 @@ import {
   Patch,
   Param,
   Body,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service.js';
 import {
   CategoryDto,
@@ -20,9 +21,15 @@ import {
   SuspendListingDto,
 } from './dto/listing.dto.js';
 import { CreateOfferDto, OfferResponseDto } from './dto/offer.dto.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/guards/roles.decorator.js';
 
 @ApiTags('Admin Catalog Management')
 @Controller('v1/admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('super_admin', 'admin_owner')
+@ApiBearerAuth()
 export class AdminCatalogController {
   constructor(private readonly catalogService: CatalogService) {}
 

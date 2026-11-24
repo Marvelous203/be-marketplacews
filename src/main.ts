@@ -23,9 +23,15 @@ async function bootstrap() {
   });
 
   const config = new DocumentBuilder()
-    .setTitle('VELL Fashion API')
-    .setDescription('Backend API for VELL Fashion Shop. Connect to swagger at /api-docs')
-    .setVersion('1.0')
+    .setTitle('VELL Fashion & Marketplace API')
+    .setDescription('Backend API for Website Marketplace & VELL Shop. Swagger at /api-docs')
+    .setVersion('1.1')
+    .addBearerAuth()
+    .addTag('Authentication & Identity', 'Đăng nhập, xác thực JWT và thông tin tài khoản')
+    .addTag('Admin Users & Tenant Roles Management', 'Quản lý người dùng, phân quyền Admin Owner và Sub-roles')
+    .addTag('Admin Catalog Management', 'Quản trị danh mục, tags, giải pháp và gói chào giá')
+    .addTag('Admin Quote Requests', 'Quản trị yêu cầu dự án tùy biến')
+    .addTag('Admin Quotations', 'Quản trị hồ sơ báo giá')
     .addTag('looks', 'Lookbook & outfit styling endpoints')
     .addTag('products', 'Product catalog & mix-and-match upload endpoints')
     .addTag('orders', 'Order processing & checkout endpoints')
