@@ -876,6 +876,148 @@
         ]
       }
     },
+    "/api/v1/public/community/threads/{id}/react": {
+      "post": {
+        "operationId": "PublicCommunityController_reactToThread",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactThreadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Thả reaction theo ngữ cảnh (Hữu ích / Đã dùng thử / Cần thêm demo)",
+        "tags": [
+          "Public Community Forum"
+        ]
+      }
+    },
+    "/api/v1/community/threads": {
+      "post": {
+        "operationId": "CommunityController_createThread",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateThreadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Đăng bài viết mới hoặc phiếu Cần giải pháp lên diễn đàn",
+        "tags": [
+          "Community Forum & Request Board (R4B/C)"
+        ]
+      }
+    },
+    "/api/v1/community/threads/{id}/replies": {
+      "post": {
+        "operationId": "CommunityController_addReply",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReplyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gửi bình luận / câu trả lời vào bài viết",
+        "tags": [
+          "Community Forum & Request Board (R4B/C)"
+        ]
+      }
+    },
+    "/api/v1/community/threads/{id}/proposals": {
+      "post": {
+        "operationId": "CommunityController_addProposal",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProposalDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Seller đối tác gửi Proposal cạnh tranh cho phiếu Cần giải pháp",
+        "tags": [
+          "Community Forum & Request Board (R4B/C)"
+        ]
+      }
+    },
     "/api/v1/quote-requests": {
       "post": {
         "operationId": "PublicRequestsController_createRequest",
@@ -1338,6 +1480,472 @@
         "summary": "Khách hàng: Từ chối báo giá (WM-052)",
         "tags": [
           "Public & Customer Quotations"
+        ]
+      }
+    },
+    "/api/v1/orders/from-quotation/{quotationId}": {
+      "post": {
+        "description": "Chuyển đổi snapshot báo giá sang đơn hàng, khởi tạo mã ORD-YYYY-XXXX và thông tin chuyển khoản VietQR.",
+        "operationId": "PublicOrdersController_createFromQuotation",
+        "parameters": [
+          {
+            "name": "quotationId",
+            "required": true,
+            "in": "path",
+            "description": "ID báo giá đã duyệt",
+            "schema": {
+              "example": "quote-001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderFromQuotationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Đơn hàng được khởi tạo thành công"
+          },
+          "400": {
+            "description": "Báo giá chưa được ACCEPTED"
+          }
+        },
+        "summary": "Khách hàng: Tạo đơn hàng chính thức từ Báo giá đã được chấp thuận (WM-053 Idempotent)",
+        "tags": [
+          "Public & Customer Marketplace Orders"
+        ]
+      }
+    },
+    "/api/v1/orders/number/{orderNumber}": {
+      "get": {
+        "operationId": "PublicOrdersController_getByOrderNumber",
+        "parameters": [
+          {
+            "name": "orderNumber",
+            "required": true,
+            "in": "path",
+            "description": "Mã đơn hàng",
+            "schema": {
+              "example": "ORD-2026-0001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin chi tiết đơn hàng"
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng"
+          }
+        },
+        "summary": "Khách hàng: Tra cứu đơn hàng theo Mã Đơn (ORD-YYYY-XXXX)",
+        "tags": [
+          "Public & Customer Marketplace Orders"
+        ]
+      }
+    },
+    "/api/v1/orders/{id}": {
+      "get": {
+        "operationId": "PublicOrdersController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID đơn hàng hoặc Quotation ID",
+            "schema": {
+              "example": "ord-seed-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Toàn bộ hồ sơ đơn hàng"
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng"
+          }
+        },
+        "summary": "Khách hàng: Xem chi tiết đơn hàng, tiến độ thanh toán & hướng dẫn chuyển khoản VietQR",
+        "tags": [
+          "Public & Customer Marketplace Orders"
+        ]
+      }
+    },
+    "/api/v1/admin/orders": {
+      "get": {
+        "operationId": "AdminOrdersController_getAllOrders",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo trạng thái đơn hàng",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING_PAYMENT",
+                "CONFIRMED",
+                "PROCESSING",
+                "DELIVERED",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "paymentStatus",
+            "required": false,
+            "in": "query",
+            "description": "Lọc theo trạng thái thanh toán",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "UNPAID",
+                "PARTIALLY_PAID",
+                "PAID",
+                "REFUNDED"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Tìm kiếm theo mã đơn (ORD-XXXX), tên khách hàng hoặc email",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Trang hiện tại (1-based)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Số lượng mục trên mỗi trang",
+            "schema": {
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách đơn hàng phân trang"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Danh sách tất cả đơn hàng kèm bộ lọc trạng thái & thanh toán (WM-060)",
+        "tags": [
+          "Admin Marketplace Orders & Payments"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}": {
+      "get": {
+        "operationId": "AdminOrdersController_getOrderById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID đơn hàng",
+            "schema": {
+              "example": "ord-seed-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chi tiết đơn hàng"
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Xem chi tiết toàn diện đơn hàng, snapshot chi phí & lịch sử giao dịch",
+        "tags": [
+          "Admin Marketplace Orders & Payments"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}/payments": {
+      "post": {
+        "description": "Tự động tính toán số dư còn lại, cập nhật paymentStatus (PARTIALLY_PAID / PAID) và chuyển trạng thái đơn sang CONFIRMED.",
+        "operationId": "AdminOrdersController_recordPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID đơn hàng",
+            "schema": {
+              "example": "ord-seed-001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ghi nhận thanh toán thành công"
+          },
+          "400": {
+            "description": "Số tiền thanh toán vượt quá số dư hoặc đơn đã bị hủy"
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin / Thu Ngân: Ghi nhận đợt thanh toán ngoại tuyến (Chuyển khoản, VietQR, Tiền mặt) (WM-061)",
+        "tags": [
+          "Admin Marketplace Orders & Payments"
+        ]
+      }
+    },
+    "/api/v1/admin/orders/{id}/status": {
+      "patch": {
+        "description": "Luồng trạng thái: PENDING_PAYMENT -> CONFIRMED -> PROCESSING -> DELIVERED -> COMPLETED (hoặc CANCELLED).",
+        "operationId": "AdminOrdersController_transitionStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID đơn hàng",
+            "schema": {
+              "example": "ord-seed-001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionOrderStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chuyển trạng thái thành công"
+          },
+          "400": {
+            "description": "Chuyển trạng thái không hợp lệ"
+          },
+          "404": {
+            "description": "Không tìm thấy đơn hàng"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Admin: Chuyển đổi trạng thái đơn hàng kiểm soát qua State Machine (WM-060)",
+        "tags": [
+          "Admin Marketplace Orders & Payments"
+        ]
+      }
+    },
+    "/api/v1/seller/dashboard": {
+      "get": {
+        "operationId": "SellerController_getDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Thống kê hiệu suất đối tác bán hàng (Seller Dashboard)",
+        "tags": [
+          "Seller Portal (R4A)"
+        ]
+      }
+    },
+    "/api/v1/seller/listings": {
+      "get": {
+        "operationId": "SellerController_getListings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Danh sách giải pháp thuộc quyền sở hữu của Seller",
+        "tags": [
+          "Seller Portal (R4A)"
+        ]
+      },
+      "post": {
+        "operationId": "SellerController_createListing",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSellerListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tạo bản nháp giải pháp mới lên Sàn Phố Nghề",
+        "tags": [
+          "Seller Portal (R4A)"
+        ]
+      }
+    },
+    "/api/v1/seller/listings/{id}/submit": {
+      "post": {
+        "operationId": "SellerController_submitForReview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gửi giải pháp chờ Super Admin kiểm duyệt",
+        "tags": [
+          "Seller Portal (R4A)"
+        ]
+      }
+    },
+    "/api/v1/seller/leads": {
+      "get": {
+        "operationId": "SellerController_getLeads",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hộp thư yêu cầu dự án dành cho Seller (đã lọc bỏ ghi chú nội bộ)",
+        "tags": [
+          "Seller Portal (R4A)"
+        ]
+      }
+    },
+    "/api/v1/admin/seller-listings/{id}/moderate": {
+      "post": {
+        "operationId": "SellerController_moderateListing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerateSellerListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Super Admin kiểm duyệt giải pháp Seller (Duyệt / Từ chối kèm phản hồi)",
+        "tags": [
+          "Seller Portal (R4A)"
         ]
       }
     },
@@ -1869,6 +2477,14 @@
     {
       "name": "Admin Quotations",
       "description": "Quản trị hồ sơ báo giá"
+    },
+    {
+      "name": "Public & Customer Marketplace Orders",
+      "description": "Tra cứu đơn hàng, tiến độ thanh toán & VietQR"
+    },
+    {
+      "name": "Admin Marketplace Orders & Payments",
+      "description": "Quản trị đơn hàng và thu tiền ngoại tuyến"
     }
   ],
   "servers": [],
@@ -2775,6 +3391,95 @@
           "reason"
         ]
       },
+      "ReactThreadDto": {
+        "type": "object",
+        "properties": {
+          "reactionType": {
+            "type": "string",
+            "enum": [
+              "HELPFUL",
+              "TRIED",
+              "NEED_DEMO"
+            ]
+          }
+        },
+        "required": [
+          "reactionType"
+        ]
+      },
+      "CreateThreadDto": {
+        "type": "object",
+        "properties": {
+          "threadType": {
+            "type": "string",
+            "enum": [
+              "DISCUSSION",
+              "QUESTION",
+              "SHOWCASE",
+              "WANTED"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "example": "Cần làm website Tiệm Gốm Truyền Thống kèm đặt lịch workshop"
+          },
+          "bodyMd": {
+            "type": "string",
+            "example": "Tìm đối tác thiết kế web giao diện mộc, ngân sách 12-20 triệu."
+          },
+          "budgetRange": {
+            "type": "string",
+            "example": "12.000.000 - 20.000.000 ₫"
+          },
+          "relatedListingSlug": {
+            "type": "string",
+            "example": "restaurant-pro"
+          }
+        },
+        "required": [
+          "threadType",
+          "title",
+          "bodyMd"
+        ]
+      },
+      "CreateReplyDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "Mình đã áp dụng preload font cục bộ và giảm LCP xuống 1.1s."
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "CreateProposalDto": {
+        "type": "object",
+        "properties": {
+          "priceMinor": {
+            "type": "number",
+            "example": 18500000
+          },
+          "estimatedDays": {
+            "type": "number",
+            "example": 14
+          },
+          "pitchSummary": {
+            "type": "string",
+            "example": "Đội ngũ đã triển khai 5+ web thương mại điện tử đồng hồ, cam kết đạt 95+ PageSpeed và bàn giao source sạch."
+          },
+          "demoUrl": {
+            "type": "string",
+            "example": "https://demo.phonghe.vn/watch-luxury"
+          }
+        },
+        "required": [
+          "priceMinor",
+          "estimatedDays",
+          "pitchSummary"
+        ]
+      },
       "BudgetDto": {
         "type": "object",
         "properties": {
@@ -3262,6 +3967,178 @@
         "required": [
           "quotationVersionId",
           "rejectionReason"
+        ]
+      },
+      "CreateOrderFromQuotationDto": {
+        "type": "object",
+        "properties": {
+          "customerPhone": {
+            "type": "string",
+            "description": "Số điện thoại khách hàng cập nhật khi lên đơn",
+            "example": "0912345678"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Ghi chú đơn hàng của khách",
+            "example": "Cần bàn giao sớm trước ngày 15 tháng tới"
+          }
+        }
+      },
+      "RecordPaymentDto": {
+        "type": "object",
+        "properties": {
+          "amountMinor": {
+            "type": "number",
+            "description": "Số tiền thanh toán tính bằng integer minor units (VND: 1 VND = 1 đơn vị)",
+            "example": 22000000
+          },
+          "paymentMethod": {
+            "type": "string",
+            "description": "Phương thức thanh toán ngoại tuyến",
+            "enum": [
+              "BANK_TRANSFER",
+              "VIETQR",
+              "CASH",
+              "CREDIT_NOTE"
+            ],
+            "example": "BANK_TRANSFER"
+          },
+          "referenceCode": {
+            "type": "string",
+            "description": "Mã giao dịch ngân hàng / số biên lai thu tiền",
+            "example": "FT260241920842"
+          },
+          "receiptUrl": {
+            "type": "string",
+            "description": "Đường dẫn ảnh chứng từ / ủy nhiệm chi",
+            "example": "https://example.com/receipts/rec-001.png"
+          },
+          "note": {
+            "type": "string",
+            "description": "Ghi chú thêm về đợt thanh toán (ví dụ: Thanh toán đợt 1 - 50% khởi động dự án)",
+            "example": "Thanh toán đợt 1 (50% giá trị hợp đồng)"
+          },
+          "recordedBy": {
+            "type": "string",
+            "description": "Tên hoặc mã định danh của nhân sự / thu ngân ghi nhận",
+            "example": "Kế toán trưởng Nguyễn Thị B"
+          },
+          "paidAt": {
+            "type": "string",
+            "description": "Thời điểm thanh toán thực tế (ISO string)",
+            "example": "2026-11-24T10:00:00.000Z"
+          }
+        },
+        "required": [
+          "amountMinor",
+          "paymentMethod"
+        ]
+      },
+      "TransitionOrderStatusDto": {
+        "type": "object",
+        "properties": {
+          "toStatus": {
+            "type": "string",
+            "description": "Trạng thái đích cần chuyển sang",
+            "enum": [
+              "PENDING_PAYMENT",
+              "CONFIRMED",
+              "PROCESSING",
+              "DELIVERED",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "PROCESSING"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Lý do hoặc ghi chú chuyển trạng thái",
+            "example": "Đã nhận đủ thanh toán đợt 1, chuyển giao cho kỹ thuật bắt đầu dựng web"
+          },
+          "actor": {
+            "type": "string",
+            "description": "Người thực hiện chuyển trạng thái (Admin, Staff, Kỹ thuật)",
+            "example": "Admin Kỹ Thuật Trần C"
+          }
+        },
+        "required": [
+          "toStatus"
+        ]
+      },
+      "CreateSellerListingDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Website Đặt Bàn & Thực Đơn QR Cho Quán Phở"
+          },
+          "categoryId": {
+            "type": "string",
+            "example": "cat-food"
+          },
+          "categoryName": {
+            "type": "string",
+            "example": "Nhà hàng & Ẩm thực"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Giao diện mộc mạc Phố Nghề, hỗ trợ đặt bàn realtime và xuất thực đơn QR."
+          },
+          "demoUrl": {
+            "type": "string",
+            "example": "https://demo.phonghe.vn/pho-xua"
+          },
+          "fulfillmentType": {
+            "type": "string",
+            "enum": [
+              "SOURCE_CODE",
+              "MANAGED_SERVICE",
+              "SUBSCRIPTION"
+            ],
+            "example": "MANAGED_SERVICE"
+          },
+          "priceMinor": {
+            "type": "number",
+            "example": 18000000,
+            "description": "Giá niêm yết (VND integer minor units)"
+          }
+        },
+        "required": [
+          "title",
+          "categoryId",
+          "summary",
+          "demoUrl",
+          "fulfillmentType",
+          "priceMinor"
+        ]
+      },
+      "ModerateSellerListingDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "PUBLISHED",
+              "REJECTED"
+            ]
+          },
+          "fieldKey": {
+            "type": "string",
+            "enum": [
+              "title",
+              "demoUrl",
+              "priceMinor",
+              "summary",
+              "fulfillmentType"
+            ]
+          },
+          "comment": {
+            "type": "string",
+            "example": "Link demo chưa phản hồi trên thiết bị di động, vui lòng kiểm tra lại."
+          }
+        },
+        "required": [
+          "decision"
         ]
       },
       "PieceDto": {

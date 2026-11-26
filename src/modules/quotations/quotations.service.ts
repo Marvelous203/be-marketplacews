@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  Optional,
+  forwardRef,
+} from '@nestjs/common';
 import { MoneyService } from '../../common/money/money.service.js';
 import { RequestsService } from '../requests/requests.service.js';
+import { MarketplaceOrdersService } from '../marketplace-orders/marketplace-orders.service.js';
 import {
   Quotation,
   QuotationVersion,
@@ -15,6 +23,9 @@ export class QuotationsService {
   constructor(
     private readonly moneyService: MoneyService,
     private readonly requestsService: RequestsService,
+    @Optional()
+    @Inject(forwardRef(() => MarketplaceOrdersService))
+    private readonly ordersService?: any,
   ) {}
 
   private quotations: Quotation[] = [
@@ -268,6 +279,17 @@ export class QuotationsService {
       reason: `Khách hàng ${dto.acceptanceName} đã chấp thuận báo giá #${quote.id} v${quote.currentVersionNumber}.`,
       actor: dto.acceptanceName,
     });
+
+    // Tự động tạo Đơn hàng chính thức từ báo giá (WM-053 Idempotent)
+    if (this.ordersService) {
+      try {
+        const order = await this.ordersService.createFromQuotation(quote.id);
+        quote.convertedOrderId = order.id;
+        quote.orderNumber = order.orderNumber;
+      } catch (err) {
+        console.warn('Auto create order warning:', err);
+      }
+    }
 
     return quote;
   }

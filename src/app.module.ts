@@ -11,6 +11,8 @@ import { RequestsModule } from './modules/requests/requests.module.js';
 import { QuotationsModule } from './modules/quotations/quotations.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { MarketplaceOrdersModule } from './modules/marketplace-orders/marketplace-orders.module.js';
+import { SellerModule } from './modules/seller/seller.module.js';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { UsersModule } from './modules/users/users.module.js';
     CommunityModule,
     RequestsModule,
     QuotationsModule,
+    MarketplaceOrdersModule,
+    SellerModule,
     LooksModule,
     ProductsModule,
     OrdersModule,

@@ -1,16 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { MoneyService } from '../../common/money/money.service.js';
 import {
   ForumCategory,
   ForumThread,
+  ReactionType,
+  ThreadProposal,
+  ThreadReply,
   ThreadType,
 } from './community.types.js';
+import { CreateProposalDto, CreateThreadDto } from './dto/community.dto.js';
 
 @Injectable()
 export class CommunityService {
   private categories: ForumCategory[] = [];
   private threads: ForumThread[] = [];
 
-  constructor() {
+  constructor(@Optional() private readonly moneyService?: MoneyService) {
     this.seedCommunityData();
   }
 
@@ -43,7 +54,6 @@ export class CommunityService {
       );
     }
 
-    // Pinned threads first, then lastActivityAt DESC
     filtered.sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       return (
@@ -63,13 +73,181 @@ export class CommunityService {
 
   getThreadBySlug(slug: string): ForumThread {
     const thread = this.threads.find(
-      (t) => t.slug === slug && t.status === 'PUBLISHED',
+      (t) => (t.slug === slug || t.id === slug) && t.status === 'PUBLISHED',
     );
     if (!thread) {
       throw new NotFoundException(`Thread not found with slug: ${slug}`);
     }
     thread.viewCount += 1;
     return thread;
+  }
+
+  reactToThread(idOrSlug: string, reactionType: ReactionType): ForumThread {
+    const thread = this.threads.find(
+      (t) => (t.id === idOrSlug || t.slug === idOrSlug) && t.status === 'PUBLISHED',
+    );
+    if (!thread) {
+      throw new NotFoundException(`Không tìm thấy bài viết: ${idOrSlug}`);
+    }
+    if (reactionType === 'HELPFUL') {
+      thread.reactions.helpful += 1;
+      thread.likeCount += 1;
+    } else if (reactionType === 'TRIED') {
+      thread.reactions.tried += 1;
+    } else if (reactionType === 'NEED_DEMO') {
+      thread.reactions.needDemo += 1;
+    }
+    return thread;
+  }
+
+  createThread(
+    dto: CreateThreadDto,
+    author: { id: string; name: string; role: string },
+  ): ForumThread {
+    const now = new Date().toISOString();
+    const slugBase = dto.title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const catMap: Record<string, { slug: string; name: string }> = {
+      WANTED: { slug: 'wanted', name: 'Cần giải pháp (Request Board)' },
+      QUESTION: { slug: 'qa', name: 'Hỏi đáp Kỹ thuật (Q&A)' },
+      SHOWCASE: { slug: 'showcase', name: 'Khoe sản phẩm (Showcase)' },
+      DISCUSSION: { slug: 'general', name: 'Thảo luận Chung' },
+    };
+    const cat = catMap[dto.threadType] || catMap.DISCUSSION;
+
+    const newThread: ForumThread = {
+      id: `thr-${randomUUID().slice(0, 6)}`,
+      categorySlug: cat.slug,
+      categoryName: cat.name,
+      author: {
+        id: author.id,
+        name: author.name,
+        username: author.name.toLowerCase().replace(/\s+/g, '.'),
+        badge:
+          author.role === 'dev_freelance'
+            ? 'SELLER_VERIFIED'
+            : author.role === 'super_admin'
+              ? 'STAFF'
+              : 'TRUSTED_MEMBER',
+      },
+      threadType: dto.threadType,
+      title: dto.title.trim(),
+      slug: `${slugBase || 'bai-viet'}-${Date.now().toString().slice(-4)}`,
+      summary: dto.bodyMd.trim().slice(0, 160),
+      bodyMd: dto.bodyMd.trim(),
+      status: 'PUBLISHED',
+      pinned: false,
+      replyCount: 0,
+      viewCount: 1,
+      likeCount: 0,
+      reactions: { helpful: 0, tried: 0, needDemo: 0 },
+      proposals: dto.threadType === 'WANTED' ? [] : undefined,
+      replies: [],
+      createdAt: now,
+      lastActivityAt: now,
+      ...(dto.threadType === 'WANTED'
+        ? {
+            wantedDetails: {
+              goalSummary: dto.title.trim(),
+              budgetRange: dto.budgetRange || 'Thỏa thuận theo phạm vi',
+              budgetCurrency: 'VND',
+              status: 'OPEN',
+              proposalCount: 0,
+            },
+          }
+        : {}),
+      ...(dto.threadType === 'SHOWCASE' && dto.relatedListingSlug
+        ? {
+            showcaseDetails: {
+              relatedListingSlug: dto.relatedListingSlug,
+              relatedListingTitle: dto.title.trim(),
+            },
+          }
+        : {}),
+    };
+
+    this.threads.unshift(newThread);
+    return newThread;
+  }
+
+  addProposal(
+    threadIdOrSlug: string,
+    dto: CreateProposalDto,
+    seller: { id: string; name: string },
+  ): ThreadProposal {
+    const thread = this.threads.find(
+      (t) => t.id === threadIdOrSlug || t.slug === threadIdOrSlug,
+    );
+    if (!thread) {
+      throw new NotFoundException(`Không tìm thấy phiếu yêu cầu: ${threadIdOrSlug}`);
+    }
+    if (thread.threadType !== 'WANTED') {
+      throw new BadRequestException('Chỉ có thể gửi Proposal cho bài viết loại "Cần giải pháp (WANTED)"');
+    }
+    if (!Number.isInteger(dto.priceMinor) || dto.priceMinor < 100000) {
+      throw new BadRequestException('Chi phí đề xuất phải là số nguyên VND tối thiểu 100.000 đ');
+    }
+
+    const validated = this.moneyService
+      ? this.moneyService.create(dto.priceMinor, 'VND')
+      : { amountMinor: BigInt(dto.priceMinor) };
+
+    const proposal: ThreadProposal = {
+      id: `prop-${randomUUID().slice(0, 6)}`,
+      threadId: thread.id,
+      sellerId: seller.id,
+      sellerName: seller.name,
+      sellerBadge: 'Seller Xác Minh',
+      priceMinor: Number(validated.amountMinor),
+      currency: 'VND',
+      estimatedDays: dto.estimatedDays,
+      pitchSummary: dto.pitchSummary.trim(),
+      demoUrl: dto.demoUrl?.trim(),
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!thread.proposals) thread.proposals = [];
+    thread.proposals.push(proposal);
+    if (thread.wantedDetails) {
+      thread.wantedDetails.proposalCount = thread.proposals.length;
+      if (thread.wantedDetails.status === 'OPEN') {
+        thread.wantedDetails.status = 'IN_DISCUSSION';
+      }
+    }
+    thread.lastActivityAt = proposal.createdAt;
+    return proposal;
+  }
+
+  addReply(
+    threadIdOrSlug: string,
+    body: string,
+    author: { name: string; role: string },
+  ): ThreadReply {
+    const thread = this.threads.find(
+      (t) => t.id === threadIdOrSlug || t.slug === threadIdOrSlug,
+    );
+    if (!thread) {
+      throw new NotFoundException(`Không tìm thấy bài viết: ${threadIdOrSlug}`);
+    }
+    const reply: ThreadReply = {
+      id: `rep-${randomUUID().slice(0, 6)}`,
+      threadId: thread.id,
+      authorName: author.name,
+      authorRole: author.role,
+      body: body.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    if (!thread.replies) thread.replies = [];
+    thread.replies.push(reply);
+    thread.replyCount = thread.replies.length;
+    thread.lastActivityAt = reply.createdAt;
+    return reply;
   }
 
   private seedCommunityData(): void {
@@ -149,9 +327,10 @@ export class CommunityService {
 Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
         status: 'PUBLISHED',
         pinned: true,
-        replyCount: 5,
+        replyCount: 2,
         viewCount: 342,
         likeCount: 18,
+        reactions: { helpful: 18, tried: 2, needDemo: 5 },
         createdAt: yesterday,
         lastActivityAt: now,
         wantedDetails: {
@@ -159,9 +338,49 @@ Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
           budgetRange: '15.000.000 - 25.000.000 ₫',
           budgetCurrency: 'VND',
           targetDate: '2026-12-15',
-          status: 'OPEN',
-          proposalCount: 4,
+          status: 'IN_DISCUSSION',
+          proposalCount: 2,
         },
+        proposals: [
+          {
+            id: 'prop-101',
+            threadId: 'thr-1',
+            sellerId: 'usr-dev-freelance',
+            sellerName: 'Nguyễn Văn Dev (Freelancer)',
+            sellerBadge: 'Seller Xác Minh',
+            priceMinor: 18500000,
+            currency: 'VND',
+            estimatedDays: 18,
+            pitchSummary: 'Đã có sẵn nền tảng Next.js 16 + NestJS tối ưu 98 điểm PageSpeed, tích hợp sẵn VietQR MB Bank và bàn giao toàn bộ source sạch.',
+            demoUrl: 'https://demo.phonghe.vn/watch-classic',
+            status: 'SHORTLISTED',
+            createdAt: yesterday,
+          },
+          {
+            id: 'prop-102',
+            threadId: 'thr-1',
+            sellerId: 'usr-studio-02',
+            sellerName: 'Mộc Studio Web',
+            sellerBadge: 'Đối Tác Vàng',
+            priceMinor: 23000000,
+            currency: 'VND',
+            estimatedDays: 14,
+            pitchSummary: 'Thiết kế riêng bộ icon và trải nghiệm xoay ảnh sản phẩm 360 độ mượt mà trên mobile, kèm bảo hành 12 tháng.',
+            demoUrl: 'https://demo.phonghe.vn/watch-360',
+            status: 'PENDING',
+            createdAt: now,
+          },
+        ],
+        replies: [
+          {
+            id: 'rep-1',
+            threadId: 'thr-1',
+            authorName: 'Nguyễn Văn Dev (Freelancer)',
+            authorRole: 'dev_freelance',
+            body: 'Mình đã gửi Proposal kèm link demo thực tế cho dòng đồng hồ cơ, anh Quân xem qua nhé!',
+            createdAt: yesterday,
+          },
+        ],
       },
       {
         id: 'thr-2',
@@ -184,6 +403,7 @@ Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
         replyCount: 14,
         viewCount: 890,
         likeCount: 45,
+        reactions: { helpful: 45, tried: 19, needDemo: 3 },
         createdAt: twoDaysAgo,
         lastActivityAt: yesterday,
         questionDetails: {
@@ -211,6 +431,7 @@ Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
         replyCount: 8,
         viewCount: 620,
         likeCount: 32,
+        reactions: { helpful: 32, tried: 11, needDemo: 7 },
         createdAt: twoDaysAgo,
         lastActivityAt: now,
         showcaseDetails: {
@@ -240,6 +461,7 @@ Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
         replyCount: 3,
         viewCount: 210,
         likeCount: 7,
+        reactions: { helpful: 7, tried: 0, needDemo: 2 },
         createdAt: yesterday,
         lastActivityAt: now,
         wantedDetails: {
@@ -248,8 +470,24 @@ Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
           budgetCurrency: 'VND',
           targetDate: '2026-12-25',
           status: 'OPEN',
-          proposalCount: 3,
+          proposalCount: 1,
         },
+        proposals: [
+          {
+            id: 'prop-201',
+            threadId: 'thr-4',
+            sellerId: 'usr-dev-freelance',
+            sellerName: 'Nguyễn Văn Dev (Freelancer)',
+            sellerBadge: 'Seller Xác Minh',
+            priceMinor: 15000000,
+            currency: 'VND',
+            estimatedDays: 12,
+            pitchSummary: 'Triển khai trọn gói mẫu Web Nha Khoa Mộc An kèm bảng giá minh bạch và kết nối Zalo OA tự động.',
+            demoUrl: 'https://demo.phonghe.vn/nha-khoa',
+            status: 'PENDING',
+            createdAt: now,
+          },
+        ],
       },
       {
         id: 'thr-5',
@@ -272,6 +510,7 @@ Các seller xác minh xin vui lòng gửi Proposal qua hệ thống!`,
         replyCount: 22,
         viewCount: 1150,
         likeCount: 68,
+        reactions: { helpful: 68, tried: 34, needDemo: 1 },
         createdAt: twoDaysAgo,
         lastActivityAt: yesterday,
       },

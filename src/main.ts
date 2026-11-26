@@ -32,6 +32,8 @@ async function bootstrap() {
     .addTag('Admin Catalog Management', 'Quản trị danh mục, tags, giải pháp và gói chào giá')
     .addTag('Admin Quote Requests', 'Quản trị yêu cầu dự án tùy biến')
     .addTag('Admin Quotations', 'Quản trị hồ sơ báo giá')
+    .addTag('Public & Customer Marketplace Orders', 'Tra cứu đơn hàng, tiến độ thanh toán & VietQR')
+    .addTag('Admin Marketplace Orders & Payments', 'Quản trị đơn hàng và thu tiền ngoại tuyến')
     .addTag('looks', 'Lookbook & outfit styling endpoints')
     .addTag('products', 'Product catalog & mix-and-match upload endpoints')
     .addTag('orders', 'Order processing & checkout endpoints')

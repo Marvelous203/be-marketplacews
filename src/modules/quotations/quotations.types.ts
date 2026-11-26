@@ -76,6 +76,8 @@ export interface Quotation {
   status: QuotationStatus;
   createdAt: string;
   updatedAt: string;
+  convertedOrderId?: string;
+  orderNumber?: string;
   currentVersion: QuotationVersion;
   historyVersions: QuotationVersion[];
 }

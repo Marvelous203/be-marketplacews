@@ -3,18 +3,38 @@ import {
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { User, UserRole, JwtPayload, AuthResponse, TenantSubRole } from './auth.types.js';
 import { LoginDto } from './dto/login.dto.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'vell-fashion-super-secret-jwt-key-2026';
 const JWT_EXPIRES_IN_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
+export function hashPassword(plain: string): string {
+  const salt = randomBytes(16).toString('hex');
+  const derived = scryptSync(plain, salt, 64).toString('hex');
+  return `${salt}:${derived}`;
+}
+
+export function verifyPassword(plain: string, storedHash: string): boolean {
+  if (!plain || !storedHash || !storedHash.includes(':')) {
+    return false;
+  }
+  const [salt, keyHex] = storedHash.split(':');
+  if (!salt || !keyHex) return false;
+  const keyBuf = Buffer.from(keyHex, 'hex');
+  const derivedBuf = scryptSync(plain, salt, 64);
+  if (keyBuf.length !== derivedBuf.length) return false;
+  return timingSafeEqual(keyBuf, derivedBuf);
+}
+
+const DEFAULT_DEV_PASSWORD_HASH = hashPassword('password123');
+
 export const MOCK_USERS: User[] = [
   {
     id: 'usr-super-admin',
     email: 'superadmin@marketplace.vn',
-    passwordHash: 'password123',
+    passwordHash: DEFAULT_DEV_PASSWORD_HASH,
     name: 'Hệ Thống Super Admin',
     role: 'super_admin',
     tenantId: null,
@@ -28,7 +48,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-admin-owner',
     email: 'owner@fashionboutique.vn',
-    passwordHash: 'password123',
+    passwordHash: DEFAULT_DEV_PASSWORD_HASH,
     name: 'Chủ Shop Thời Trang (Boutique)',
     role: 'admin_owner',
     tenantId: 'tenant-boutique-001',
@@ -42,7 +62,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-tenant',
     email: 'tenant@mybrand.vn',
-    passwordHash: 'password123',
+    passwordHash: DEFAULT_DEV_PASSWORD_HASH,
     name: 'Doanh Nghiệp MyBrand',
     role: 'tenant',
     tenantId: 'tenant-mybrand-002',
@@ -56,7 +76,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-dev-freelance',
     email: 'developer@freelance.io',
-    passwordHash: 'password123',
+    passwordHash: DEFAULT_DEV_PASSWORD_HASH,
     name: 'Nguyễn Văn Dev (Freelancer)',
     role: 'dev_freelance',
     tenantId: null,
@@ -70,7 +90,7 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr-guest',
     email: 'guest@customer.vn',
-    passwordHash: 'password123',
+    passwordHash: DEFAULT_DEV_PASSWORD_HASH,
     name: 'Khách Hàng Vãng Lai',
     role: 'guest',
     tenantId: null,
@@ -88,30 +108,33 @@ export class AuthService {
   private users: User[] = JSON.parse(JSON.stringify(MOCK_USERS));
 
   /**
-   * Đăng nhập người dùng bằng email + password hoặc đăng nhập nhanh theo Role
+   * Đăng nhập người dùng bằng email + password (bắt buộc verify scrypt hash)
+   * hoặc đăng nhập nhanh theo Role (chỉ cho phép ở môi trường non-production)
    */
   async login(dto: LoginDto): Promise<AuthResponse> {
     let user: User | undefined;
 
-    if (dto.role) {
+    if (dto.email) {
+      const email = dto.email.trim().toLowerCase();
+      const password = dto.password ?? '';
+      if (!password) {
+        throw new UnauthorizedException('Vui lòng nhập mật khẩu');
+      }
+
+      user = this.users.find((u) => u.email.toLowerCase() === email && u.isActive);
+      if (!user || !verifyPassword(password, user.passwordHash)) {
+        throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
+      }
+    } else if (dto.role) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new UnauthorizedException('Không hỗ trợ đăng nhập nhanh theo role ở môi trường production');
+      }
       user = this.users.find((u) => u.role === dto.role && u.isActive);
       if (!user) {
         throw new BadRequestException(`Không tìm thấy tài khoản mẫu cho role '${dto.role}'`);
       }
-    } else if (dto.email) {
-      const email = dto.email.trim().toLowerCase();
-      user = this.users.find((u) => u.email.toLowerCase() === email && u.isActive);
-      if (!user) {
-        throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
-      }
-
-      // Check password
-      const password = dto.password || '';
-      if (user.passwordHash !== password) {
-        throw new UnauthorizedException('Tài khoản hoặc mật khẩu không chính xác');
-      }
     } else {
-      throw new BadRequestException('Vui lòng cung cấp email và mật khẩu hoặc chọn role đăng nhập');
+      throw new BadRequestException('Vui lòng cung cấp email và mật khẩu');
     }
 
     const payload: JwtPayload = {

@@ -1,43 +1,103 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { describe, expect, it, beforeEach } from 'vitest';
+import { MoneyService } from '../../common/money/money.service.js';
 import { CommunityService } from './community.service.js';
 
-describe('CommunityService (R4B/R4C Forum & Request Board)', () => {
+describe('CommunityService (R4B/C)', () => {
   let service: CommunityService;
 
   beforeEach(() => {
-    service = new CommunityService();
+    service = new CommunityService(new MoneyService());
   });
 
-  it('retrieves forum categories', () => {
+  it('trả về danh mục và các bài viết mặc định kèm reactions', () => {
     const categories = service.getCategories();
     expect(categories.length).toBeGreaterThanOrEqual(4);
-    expect(categories.some((c) => c.slug === 'wanted')).toBe(true);
-    expect(categories.some((c) => c.slug === 'qa')).toBe(true);
+
+    const { items } = service.getThreads();
+    expect(items.length).toBeGreaterThanOrEqual(5);
+    expect(items[0].reactions).toBeDefined();
   });
 
-  it('filters threads by threadType (WANTED)', () => {
-    const result = service.getThreads({ threadType: 'WANTED' });
-    expect(result.items.length).toBeGreaterThanOrEqual(2);
-    expect(result.items.every((t) => t.threadType === 'WANTED')).toBe(true);
-    expect(result.items[0].wantedDetails?.budgetRange).toBeDefined();
+  it('tăng đúng số đếm reaction theo ngữ cảnh (HELPFUL / TRIED / NEED_DEMO)', () => {
+    const before = service.getThreadBySlug('toi-uu-lcp-core-web-vitals-nextjs-16');
+    const prevTried = before.reactions.tried;
+
+    const updated = service.reactToThread('thr-2', 'TRIED');
+    expect(updated.reactions.tried).toBe(prevTried + 1);
   });
 
-  it('searches threads by query keyword', () => {
-    const result = service.getThreads({ q: 'Đồng hồ' });
-    expect(result.items.length).toBe(1);
-    expect(result.items[0].slug).toBe('can-thiet-ke-web-dong-ho-cao-cap');
-  });
-
-  it('retrieves thread detail by slug and increments viewCount', () => {
-    const initialView = service.getThreadBySlug('can-thiet-ke-web-dong-ho-cao-cap').viewCount;
-    const thread = service.getThreadBySlug('can-thiet-ke-web-dong-ho-cao-cap');
-    expect(thread.title).toContain('Đồng hồ cơ khí');
-    expect(thread.viewCount).toBe(initialView + 1);
-  });
-
-  it('throws 404 for non-existent thread slug', () => {
-    expect(() => service.getThreadBySlug('non-existent-thread')).toThrow(
-      /Thread not found/,
+  it('cho phép seller gửi Proposal hợp lệ cho phiếu Cần giải pháp (WANTED)', () => {
+    const proposal = service.addProposal(
+      'thr-4',
+      {
+        priceMinor: 16500000,
+        estimatedDays: 10,
+        pitchSummary: 'Cam kết hoàn thành đúng hạn trước Tết với bộ giao diện nha khoa chuẩn Y tế.',
+        demoUrl: 'https://demo.phonghe.vn/nha-khoa-v2',
+      },
+      { id: 'usr-dev-2', name: 'Studio Gốm Số' },
     );
+
+    expect(proposal.priceMinor).toBe(16500000);
+    expect(proposal.currency).toBe('VND');
+
+    const updatedThread = service.getThreadBySlug('can-website-nha-khoa-ai-smile');
+    expect(updatedThread.proposals?.length).toBe(2);
+    expect(updatedThread.wantedDetails?.status).toBe('IN_DISCUSSION');
+  });
+
+  it('bad path: chặn gửi Proposal vào bài viết không phải WANTED', () => {
+    expect(() =>
+      service.addProposal(
+        'thr-2',
+        {
+          priceMinor: 10000000,
+          estimatedDays: 7,
+          pitchSummary: 'Test invalid thread type',
+        },
+        { id: 'usr-dev', name: 'Dev' },
+      ),
+    ).toThrow(BadRequestException);
+  });
+
+  it('bad path: chặn giá proposal nhỏ hơn mức tối thiểu hoặc không nguyên', () => {
+    expect(() =>
+      service.addProposal(
+        'thr-4',
+        {
+          priceMinor: 50000,
+          estimatedDays: 5,
+          pitchSummary: 'Giá quá thấp',
+        },
+        { id: 'usr-dev', name: 'Dev' },
+      ),
+    ).toThrow(BadRequestException);
+  });
+
+  it('tạo bài viết mới và thêm bình luận thành công', () => {
+    const thread = service.createThread(
+      {
+        threadType: 'WANTED',
+        title: 'Cần web đặt lịch Tiệm Cắt Tóc Nam Cổ Điển',
+        bodyMd: 'Cần đặt lịch thợ cắt tóc theo giờ, ngân sách 10 triệu.',
+        budgetRange: '8.000.000 - 12.000.000 ₫',
+      },
+      { id: 'usr-tenant', name: 'Chủ Tiệm Barber', role: 'tenant' },
+    );
+
+    expect(thread.threadType).toBe('WANTED');
+    expect(thread.wantedDetails?.status).toBe('OPEN');
+
+    const reply = service.addReply(thread.id, 'Mình nhận làm giao diện barber nhé!', {
+      name: 'Dev Nam',
+      role: 'dev_freelance',
+    });
+    expect(reply.body).toContain('barber');
+    expect(service.getThreadBySlug(thread.slug).replyCount).toBe(1);
+  });
+
+  it('bad path: ném NotFoundException khi react bài viết không tồn tại', () => {
+    expect(() => service.reactToThread('non-existent', 'HELPFUL')).toThrow(NotFoundException);
   });
 });

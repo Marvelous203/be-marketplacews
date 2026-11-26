@@ -9,6 +9,38 @@ export type ThreadStatus = 'PUBLISHED' | 'LOCKED' | 'HIDDEN' | 'ARCHIVED';
 
 export type WantedStatus = 'OPEN' | 'IN_DISCUSSION' | 'AWARDED' | 'CLOSED' | 'EXPIRED';
 
+export type ReactionType = 'HELPFUL' | 'TRIED' | 'NEED_DEMO';
+
+export interface ThreadReactions {
+  helpful: number;
+  tried: number;
+  needDemo: number;
+}
+
+export interface ThreadProposal {
+  id: string;
+  threadId: string;
+  sellerId: string;
+  sellerName: string;
+  sellerBadge: string;
+  priceMinor: number;
+  currency: 'VND';
+  estimatedDays: number;
+  pitchSummary: string;
+  demoUrl?: string;
+  status: 'PENDING' | 'SHORTLISTED' | 'AWARDED';
+  createdAt: string;
+}
+
+export interface ThreadReply {
+  id: string;
+  threadId: string;
+  authorName: string;
+  authorRole: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface ForumCategory {
   id: string;
   name: string;
@@ -42,6 +74,9 @@ export interface ForumThread {
   replyCount: number;
   viewCount: number;
   likeCount: number;
+  reactions: ThreadReactions;
+  proposals?: ThreadProposal[];
+  replies?: ThreadReply[];
   createdAt: string;
   lastActivityAt: string;
 
